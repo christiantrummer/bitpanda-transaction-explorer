@@ -197,12 +197,48 @@
         .stat-card.clickable:hover {
             background-color: #e9ecef;
         }
+
+        .info {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #0d6efd;
+            font-style: italic;
+            font-size: 0.9em;
+            color: #495057;
+            line-height: 1.5;
+        }
+
+        .info p {
+            margin: 0 0 10px 0;
+        }
+
+        .info p:last-child {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <h1>Bitpanda Transaction Explorer</h1>
+
+        <div class="info">
+            <p>
+                To use this webapp, you'll need a read-only API key from your Bitpanda account:
+            </p>
+            <ol>
+                <li>Go to <a href="https://web.bitpanda.com/my-account/apikey" target="_blank">https://web.bitpanda.com/my-account/apikey</a></li>
+                <li>Click "Create API Key"</li>
+                <li>Enable only the "Transactions" and "Balances" permissions</li>
+                <li>Copy the generated API key and paste it below</li>
+                <li>Click "Fetch Data" to start fetching your transactions and balances</li>
+            </ol>
+            <p>
+                Note: This webapp runs completely in your browser - your API key is only used locally to fetch data and is never sent anywhere else.
+            </p>
+        </div>
 
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
             <input type="text" id="apiKey" placeholder="Enter your API key">
@@ -240,8 +276,14 @@
             </div>
         </div>
 
+        <hr>
         <div id="transactions">
             <h2>Transactions</h2>
+
+            <div class="info" style="margin-bottom: 15px;">
+                Here are all your blockchain transactions from your Bitpanda account or to your Bitpanda account (deposits and withdrawals). The EUR value shown is the value at the time of the transaction.
+            </div>
+
             <div style="margin-bottom: 15px; display: flex; gap: 10px;">
                 <select id="typeFilter">
                     <option value="">All Types</option>
@@ -268,18 +310,43 @@
             </table>
         </div>
 
-        <div id="wallets"></div>
-        <h2>Wallets</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Symbol</th>
-                    <th class="number">Balance</th>
-                </tr>
-            </thead>
-            <tbody id="walletsTableBody"></tbody>
-        </table>
+        <hr>
+        <div id="blockchain-wallets">
+            <h2>Blockchain Wallets</h2>
+
+            <div class="info" style="margin-bottom: 15px;">
+                These are your unique blockchain addresses used across all deposits and withdrawals. To query the current balance of the wallets directly from the blockchain, click on the "Query balances" button.
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <button onclick="queryBalances()" class="button">Query balances</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Address</th>
+                        <th class="number">Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="blockchainWalletsTableBody"></tbody>
+            </table>
+        </div>
+
+        <hr>
+        <div id="wallets">
+            <h2>Bitpanda Wallets</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Symbol</th>
+                        <th class="number">Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="walletsTableBody"></tbody>
+            </table>
+        </div>
     </div>
     </div>
 
@@ -295,6 +362,7 @@
         let isFetching = false;  // Add this at the top with your other variables
         let transactions = [];
         let uniqueCoins = new Set();
+        let uniqueWallets = new Map(); // Map to store coin -> Set of addresses
 
 
         function updateStats() {
@@ -549,6 +617,15 @@
                     const coin = wallet_symbols[attrs.wallet_id];
                     uniqueCoins.add(coin);
 
+                    // Add this new code to collect unique addresses
+                    if (attrs.recipient) {
+                        if (!uniqueWallets.has(coin)) {
+                            uniqueWallets.set(coin, new Set());
+                        }
+                        uniqueWallets.get(coin).add(attrs.recipient);
+                        updateBlockchainWallets();
+                    }
+
                     transactions.push({
                         time: new Date(attrs.time.date_iso8601).toLocaleString(),
                         type: attrs.type,
@@ -587,6 +664,13 @@
             });
         }
 
+        function shortenAddress(address, prefixLength = 10, suffixLength = 10) {
+            if (!address || address.length <= prefixLength + suffixLength) {
+                return address;
+            }
+            return `${address.slice(0, prefixLength)}...${address.slice(-suffixLength)}`;
+        }
+
         function displayTransactions() {
             const tbody = document.getElementById('transactionsTableBody');
             const typeFilter = document.getElementById('typeFilter').value;
@@ -619,9 +703,7 @@
 
                 // Recipient cell with explorer link
                 const recipientCell = row.insertCell(5);
-                const shortRecipient = tx.recipient?.length > 10 ?
-                    `${tx.recipient.slice(0, 5)}...${tx.recipient.slice(-5)}` :
-                    tx.recipient;
+                const shortRecipient = shortenAddress(tx.recipient);
 
                 const recipientContainer = document.createElement('div');
                 recipientContainer.style.display = 'flex';
@@ -664,9 +746,7 @@
 
                 // Transaction ID cell with explorer link
                 const txCell = row.insertCell(6);
-                const shortTxId = tx.tx_id.length > 10 ?
-                    `${tx.tx_id.slice(0, 5)}...${tx.tx_id.slice(-5)}` :
-                    tx.tx_id;
+                const shortTxId = shortenAddress(tx.tx_id);
 
                 const container = document.createElement('div');
                 container.style.display = 'flex';
@@ -801,6 +881,160 @@
             const typeFilter = document.getElementById('typeFilter');
             typeFilter.value = type;
             displayTransactions();
+        }
+
+        // Add this function to update the blockchain wallets table
+        function updateBlockchainWallets() {
+            const tbody = document.getElementById('blockchainWalletsTableBody');
+            tbody.innerHTML = '';
+
+            // Convert Map to array and sort by coin symbol
+            [...uniqueWallets.entries()]
+                .sort(([coinA], [coinB]) => coinA.localeCompare(coinB))
+                .forEach(([coin, addresses]) => {
+                    // Sort addresses within each coin
+                    [...addresses].sort().forEach(address => {
+                        const row = tbody.insertRow();
+                        row.insertCell(0).textContent = coin;
+                        
+                        const addressCell = row.insertCell(1);
+                        const { addressLink } = getExplorerLinks({ recipient: address }, coin);
+                        const shortAddress = shortenAddress(address);
+                        
+                        const container = document.createElement('div');
+                        container.style.display = 'flex';
+                        container.style.alignItems = 'center';
+                        container.style.gap = '8px';
+
+                        // Add copy button
+                        const copyButton = document.createElement('button');
+                        copyButton.innerHTML = '📋';
+                        copyButton.title = 'Copy address';
+                        copyButton.className = 'copy-button';
+                        copyButton.onclick = async () => {
+                            try {
+                                await navigator.clipboard.writeText(address);
+                                const originalText = copyButton.innerHTML;
+                                copyButton.innerHTML = '✓';
+                                setTimeout(() => copyButton.innerHTML = originalText, 1000);
+                            } catch (err) {
+                                console.error('Failed to copy:', err);
+                            }
+                        };
+                        container.appendChild(copyButton);
+
+                        // Add address with explorer link if available
+                        if (addressLink) {
+                            const link = document.createElement('a');
+                            link.href = addressLink;
+                            link.target = '_blank';
+                            link.textContent = shortAddress;  // Use shortened address
+                            container.appendChild(link);
+                        } else {
+                            const span = document.createElement('span');
+                            span.textContent = shortAddress;  // Use shortened address
+                            container.appendChild(span);
+                        }
+
+                        const balanceCell = row.insertCell(2);
+                        balanceCell.className = 'number';
+                        balanceCell.textContent = 'Click on "Query balances"';
+
+                        addressCell.appendChild(container);
+                    });
+                });
+        }
+
+        async function queryBalances() {
+            const tbody = document.getElementById('blockchainWalletsTableBody');
+            const rows = tbody.getElementsByTagName('tr');
+
+            // Add balance header if it doesn't exist
+            const headerRow = document.querySelector('#blockchain-wallets thead tr');
+            if (!headerRow.querySelector('th.number')) {
+                const balanceHeader = document.createElement('th');
+                balanceHeader.className = 'number';
+                balanceHeader.textContent = 'Balance';
+                headerRow.appendChild(balanceHeader);
+            }
+
+            for (const row of rows) {
+                const coin = row.cells[0].textContent;
+                // Get the actual address text, not the container HTML
+                const address = row.cells[1].querySelector('a, span').textContent;
+                let balance = null;
+
+                // Create or get balance cell
+                let balanceCell = row.cells[2];
+                if (!balanceCell) {
+                    balanceCell = row.insertCell(2);
+                    balanceCell.className = 'number';
+                }
+                balanceCell.textContent = 'Querying...';
+
+                try {
+                    switch (coin) {
+                        case 'BTC':
+                            // Using Blockchain.com API
+                            const btcResponse = await fetch(`https://blockchain.info/balance?active=${address}`);
+                            const btcData = await btcResponse.json();
+                            balance = btcData[address]?.final_balance / 100000000;
+                            break;
+
+                        case 'ETH':
+                            // Using public Ethereum gateway
+                            const ethResponse = await fetch('https://eth.llamarpc.com', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    jsonrpc: '2.0',
+                                    id: 1,
+                                    method: 'eth_getBalance',
+                                    params: [address, 'latest']
+                                })
+                            });
+                            const ethData = await ethResponse.json();
+                            if (ethData.result) {
+                                balance = parseInt(ethData.result, 16) / 1e18;
+                            }
+                            break;
+
+                        case 'XRP':
+                            // Using XRPL.org API
+                            const xrpResponse = await fetch('https://xrplcluster.com/', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    "method": "account_info",
+                                    "params": [{
+                                        "account": address,
+                                        "strict": true,
+                                        "ledger_index": "current"
+                                    }]
+                                })
+                            });
+                            const xrpData = await xrpResponse.json();
+                            if (xrpData.result?.account_data?.Balance) {
+                                balance = parseFloat(xrpData.result.account_data.Balance) / 1000000;
+                            }
+                            break;
+
+                        default:
+                            balance = 'Not supported';
+                    }
+
+                    balanceCell.textContent = typeof balance === 'number' ? 
+                        balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 }) : 
+                        balance;
+
+                } catch (error) {
+                    console.error(`Error fetching balance for ${coin} address ${address}:`, error);
+                    balanceCell.textContent = 'API Error';
+                }
+
+                // Add small delay between requests to avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
         }
     </script>
 </body>
