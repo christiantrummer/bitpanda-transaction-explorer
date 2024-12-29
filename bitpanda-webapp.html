@@ -226,6 +226,7 @@
 
         <div class="info">
             <p>
+                This tool can fetch all blockchain related deposits and withdrawals from your personal Bitpanda account to give you more insights about all your used blockchain addresses.
                 To use this webapp, you'll need a read-only API key from your Bitpanda account:
             </p>
             <ol>
@@ -363,7 +364,6 @@
         let transactions = [];
         let uniqueCoins = new Set();
         let uniqueWallets = new Map(); // Map to store coin -> Set of addresses
-
 
         function updateStats() {
             Object.keys(stats).forEach(key => {
@@ -895,6 +895,9 @@
                     // Sort addresses within each coin
                     [...addresses].sort().forEach(address => {
                         const row = tbody.insertRow();
+                        // Store full address as data attribute
+                        row.setAttribute('data-address', address);
+                        
                         row.insertCell(0).textContent = coin;
                         
                         const addressCell = row.insertCell(1);
@@ -928,11 +931,11 @@
                             const link = document.createElement('a');
                             link.href = addressLink;
                             link.target = '_blank';
-                            link.textContent = shortAddress;  // Use shortened address
+                            link.textContent = shortAddress;
                             container.appendChild(link);
                         } else {
                             const span = document.createElement('span');
-                            span.textContent = shortAddress;  // Use shortened address
+                            span.textContent = shortAddress;
                             container.appendChild(span);
                         }
 
@@ -949,27 +952,14 @@
             const tbody = document.getElementById('blockchainWalletsTableBody');
             const rows = tbody.getElementsByTagName('tr');
 
-            // Add balance header if it doesn't exist
-            const headerRow = document.querySelector('#blockchain-wallets thead tr');
-            if (!headerRow.querySelector('th.number')) {
-                const balanceHeader = document.createElement('th');
-                balanceHeader.className = 'number';
-                balanceHeader.textContent = 'Balance';
-                headerRow.appendChild(balanceHeader);
-            }
-
             for (const row of rows) {
                 const coin = row.cells[0].textContent;
-                // Get the actual address text, not the container HTML
-                const address = row.cells[1].querySelector('a, span').textContent;
+                // Use the full address from data attribute instead of the displayed short version
+                const address = row.getAttribute('data-address');
                 let balance = null;
 
                 // Create or get balance cell
                 let balanceCell = row.cells[2];
-                if (!balanceCell) {
-                    balanceCell = row.insertCell(2);
-                    balanceCell.className = 'number';
-                }
                 balanceCell.textContent = 'Querying...';
 
                 try {
@@ -979,26 +969,46 @@
                             const btcResponse = await fetch(`https://blockchain.info/balance?active=${address}`);
                             const btcData = await btcResponse.json();
                             balance = btcData[address]?.final_balance / 100000000;
+                            await new Promise(resolve => setTimeout(resolve, 1000));
                             break;
 
                         case 'ETH':
-                            // Using public Ethereum gateway
-                            const ethResponse = await fetch('https://eth.llamarpc.com', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    jsonrpc: '2.0',
-                                    id: 1,
-                                    method: 'eth_getBalance',
-                                    params: [address, 'latest']
-                                })
-                            });
-                            const ethData = await ethResponse.json();
-                            if (ethData.result) {
-                                balance = parseInt(ethData.result, 16) / 1e18;
-                            }
-                            break;
+                        case 'BEST':
+                        case 'PAN':
+                        case 'OMG':
+                        case 'USDT':
+                        case 'USDC':
+                            // Using Ethplorer API for ETH and ERC20 tokens
+                            const ethplorerResponse = await fetch(`https://api.ethplorer.io/getAddressInfo/${address}?apiKey=freekey`);
+                            const ethplorerData = await ethplorerResponse.json();
+                            
+                            // Known token addresses
+                            const TOKEN_ADDRESSES = {
+                                'BEST': '0x1b073382e63411e3bcffe90ac1b9a43fefa1ec6f',
+                                'PAN': '0x536381a8628dbcc8c70ac9a30a7258442eab4c92',
+                                'OMG': '0xd26114cd6ee289accf82350c8d8487fedb8a0c07',
+                                'USDT': '0xdac17f958d2ee523a2206206994597c13d831ec7',
+                                'USDC': '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+                                'CHZ': '0x3506424f91fd33084466f402d5d97f05f8e3b4af'
+                            };
 
+                            if (coin === 'ETH') {
+                                balance = ethplorerData.ETH?.balance || 0;
+                            } else {
+                                const targetAddress = TOKEN_ADDRESSES[coin];
+                                // Find the specific token balance by contract address
+                                const tokenBalance = ethplorerData.tokens?.find(t => 
+                                    t.tokenInfo.address.toLowerCase() === targetAddress.toLowerCase()
+                                );
+                                if (tokenBalance) {
+                                    const decimals = parseInt(tokenBalance.tokenInfo.decimals);
+                                    balance = parseFloat(tokenBalance.balance) / Math.pow(10, decimals);
+                                }
+                            }
+                            // Respect rate limits (2 requests per second for freekey max)
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            break;
+                        
                         case 'XRP':
                             // Using XRPL.org API
                             const xrpResponse = await fetch('https://xrplcluster.com/', {
@@ -1017,6 +1027,7 @@
                             if (xrpData.result?.account_data?.Balance) {
                                 balance = parseFloat(xrpData.result.account_data.Balance) / 1000000;
                             }
+                            await new Promise(resolve => setTimeout(resolve, 1000));
                             break;
 
                         default:
@@ -1025,15 +1036,12 @@
 
                     balanceCell.textContent = typeof balance === 'number' ? 
                         balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 }) : 
-                        balance;
+                        balance || 'Not available';
 
                 } catch (error) {
                     console.error(`Error fetching balance for ${coin} address ${address}:`, error);
                     balanceCell.textContent = 'API Error';
                 }
-
-                // Add small delay between requests to avoid rate limits
-                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
     </script>

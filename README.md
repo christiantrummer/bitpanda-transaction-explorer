@@ -7,14 +7,14 @@ A local proxy server and web application for exploring your Bitpanda transaction
 
 ## Features
 
-- 🔄 Real-time transaction fetching from Bitpanda API
+- 🔄 Transaction fetching from Bitpanda API
 - 🔍 Transaction filtering
 - 📊 Transaction statistics
 - 💾 CSV Export functionality for transaction data
 
 ## Prerequisites
 
-- Python 3.8 or higher
+- Python 3.11 or higher
 - Poetry (Python package manager)
 
 ## Installation
