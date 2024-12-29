@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitpanda Transaction Explorer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px auto;
+            padding: 0 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .status {
+            color: #666;
+            margin: 10px 0;
+        }
+
+        .error {
+            color: #dc3545;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 4px;
+            margin: 10px 0;
+            white-space: pre-line;
+        }
+
+        .log {
+            font-family: monospace;
+            color: #666;
+            padding: 5px;
+            margin: 2px 0;
+            font-size: 0.9em;
+        }
+
+        .log.error {
+            color: #dc3545;
+            background: none;
+        }
+
+        .log.success {
+            color: #28a745;
+        }
+
+        #debugLog {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 20px 0;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        input {
+            padding: 8px;
+            width: 300px;
+            margin-right: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .collapsible {
+            background: #f1f1f1;
+            cursor: pointer;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        td.number,
+        th.number {
+            text-align: right;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        .loading {
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .loading:after {
+            content: '';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: '.';
+            }
+
+            40% {
+                content: '..';
+            }
+
+            60%,
+            100% {
+                content: '...';
+            }
+        }
+
+        .button-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #stopButton {
+            background: #dc3545;
+        }
+
+        #stopButton:hover {
+            background: #bd2130;
+        }
+
+        .copy-button {
+            padding: 2px 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .stat-card.clickable {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .stat-card.clickable:hover {
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Bitpanda Transaction Explorer</h1>
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <input type="text" id="apiKey" placeholder="Enter your API key">
+            <div class="button-group">
+                <button onclick="fetchData()" id="fetchButton">Fetch Data</button>
+                <button onclick="stopFetching()" id="stopButton" style="display: none;">Stop</button>
+                <button onclick="exportToCsv()" id="exportButton">Export as CSV</button>
+                <button onclick="toggleDebugLog()" id="debugButton">Show Debug Log</button>
+            </div>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="status" class="status"></div>
+        <div id="debugLog" style="display: none;"></div>
+
+        <div id="stats">
+            <h2>Transaction Statistics</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalProcessed">0</div>
+                    <div class="stat-label">Total Processed</div>
+                </div>
+                <div class="stat-card clickable" onclick="filterTransactions('deposit')">
+                    <div class="stat-value" id="totalDeposits">0</div>
+                    <div class="stat-label">Deposits</div>
+                </div>
+                <div class="stat-card clickable" onclick="filterTransactions('withdrawal')">
+                    <div class="stat-value" id="totalWithdrawals">0</div>
+                    <div class="stat-label">Withdrawals</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalSkipped">0</div>
+                    <div class="stat-label">Skipped</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="transactions">
+            <h2>Transactions</h2>
+            <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                <select id="typeFilter">
+                    <option value="">All Types</option>
+                    <option value="deposit">Deposit</option>
+                    <option value="withdrawal">Withdrawal</option>
+                </select>
+                <select id="coinFilter">
+                    <option value="">All Coins</option>
+                </select>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th class="number">Amount</th>
+                        <th>Coin</th>
+                        <th class="number">EUR Value</th>
+                        <th>Recipient</th>
+                        <th>Transaction ID</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionsTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="wallets"></div>
+        <h2>Wallets</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Symbol</th>
+                    <th class="number">Balance</th>
+                </tr>
+            </thead>
+            <tbody id="walletsTableBody"></tbody>
+        </table>
+    </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:5000';
+        let wallet_symbols = {};
+        let stats = {
+            totalProcessed: 0,
+            totalDeposits: 0,
+            totalWithdrawals: 0,
+            totalSkipped: 0
+        };
+        let isFetching = false;  // Add this at the top with your other variables
+        let transactions = [];
+        let uniqueCoins = new Set();
+
+
+        function updateStats() {
+            Object.keys(stats).forEach(key => {
+                document.getElementById(key).textContent = stats[key];
+            });
+        }
+
+        function log(message, type = 'info') {
+            const debugLog = document.getElementById('debugLog');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log ${type}`;
+            logEntry.textContent = `${new Date().toISOString()} - ${message}`;
+            debugLog.appendChild(logEntry);
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(`[${type}] ${message}`);
+        }
+
+        async function apiFetch(endpoint, apiKey, params = {}) {
+            const queryString = new URLSearchParams(params).toString();
+            const url = `${API_BASE}${endpoint}${queryString ? '?' + queryString : ''}`;
+
+            log(`Making request to: ${url}`);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-API-KEY': apiKey,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+
+                log(`Response status: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log(`API error (HTTP ${response.status}): ${errorText}`, 'error');
+                    throw new Error(`HTTP ${response.status} error: ${response.statusText}\n\nResponse: ${errorText}`);
+                }
+
+                const data = await response.json();
+                log(`Successfully fetched data from ${endpoint}`, 'success');
+                return data;
+            } catch (error) {
+                log(`Fetch error for ${endpoint}: ${error.message}`, 'error');
+                throw new Error(`Failed to fetch from ${endpoint}:\n${error.message}`);
+            }
+        }
+
+        async function fetchData() {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) {
+                showError('Please enter an API key');
+                return;
+            }
+
+            // Reset everything and setup UI for fetching
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('walletsTableBody').innerHTML = '';
+            document.getElementById('transactionsTableBody').innerHTML = '';
+            document.getElementById('debugLog').innerHTML = '';
+            document.getElementById('fetchButton').disabled = true;
+            document.getElementById('stopButton').style.display = 'inline-block';
+            isFetching = true;
+
+            stats = {
+                totalProcessed: 0,
+                totalDeposits: 0,
+                totalWithdrawals: 0,
+                totalSkipped: 0
+            };
+            updateStats();
+
+            try {
+                await fetch(`${API_BASE}/health`);
+                log('Proxy server is running', 'success');
+                await fetchWallets(apiKey);
+                if (isFetching) {
+                    await fetchTransactions(apiKey);
+                }
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('stopButton').style.display = 'none';
+                document.getElementById('fetchButton').disabled = false;
+                isFetching = false;
+            }
+        }
+
+        // stop fetching
+        function stopFetching() {
+            isFetching = false;
+            document.getElementById('stopButton').style.display = 'none';
+            document.getElementById('fetchButton').disabled = false;
+            updateStatus('Fetching stopped by user');
+        }
+
+        async function fetchWallets(apiKey) {
+            updateStatus('Fetching wallets...');
+            const data = await apiFetch('/wallets', apiKey);
+            const wallets = data.data;
+
+            wallet_symbols = {};
+            const tbody = document.getElementById('walletsTableBody');
+
+            // add all wallets to the symbols
+            wallets
+                .forEach(wallet => {
+                    const attrs = wallet.attributes;
+                    wallet_symbols[wallet.id] = attrs.cryptocoin_symbol;
+                });
+
+            // show only wallets with a balance, sorted by symbol
+            wallets
+                .filter(wallet => parseFloat(wallet.attributes.balance) > 0)
+                .sort((a, b) => a.attributes.cryptocoin_symbol.localeCompare(b.attributes.cryptocoin_symbol))
+                .forEach(wallet => {
+                    const attrs = wallet.attributes;
+                    const row = tbody.insertRow();
+                    
+                    // Create ID cell with link
+                    const idCell = row.insertCell(0);
+                    const idLink = document.createElement('a');
+                    idLink.href = `https://web.bitpanda.com/wallet/${wallet.id}`;
+                    idLink.target = '_blank';  // Open in new tab
+                    idLink.textContent = wallet.id;
+                    idCell.appendChild(idLink);
+                    
+                    row.insertCell(1).textContent = attrs.cryptocoin_symbol;
+                    const balanceCell = row.insertCell(2);
+                    balanceCell.textContent = attrs.balance;
+                    balanceCell.className = 'number';
+                });
+
+            log(`Found ${wallets.length} wallets`);
+        }
+
+        function getExplorerLinks(tx, coin) {
+            switch (coin) {
+                case 'BTC':
+                    return {
+                        txLink: tx.tx_id ? `https://mempool.space/tx/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://mempool.space/address/${tx.recipient}` : null
+                    };
+                case 'ETH':
+                    return {
+                        txLink: tx.tx_id ? `https://etherscan.io/tx/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://etherscan.io/address/${tx.recipient}` : null
+                    };
+                case 'XRP':
+                    return {
+                        txLink: tx.tx_id ? `https://xrpscan.com/tx/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://xrpscan.com/account/${tx.recipient}` : null
+                    };
+                case 'SOL':
+                    return {
+                        txLink: tx.tx_id ? `https://solscan.io/tx/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://solscan.io/account/${tx.recipient}` : null
+                    };
+                case 'DOGE':
+                    return {
+                        txLink: tx.tx_id ? `https://dogechain.info/tx/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://dogechain.info/address/${tx.recipient}` : null
+                    };
+                case 'ADA':
+                    return {
+                        txLink: tx.tx_id ? `https://cardanoscan.io/transaction/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://cardanoscan.io/address/${tx.recipient}` : null
+                    };
+                case 'AVAX':
+                    return {
+                        txLink: tx.tx_id ? `https://snowtrace.io/tx/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://snowtrace.io/address/${tx.recipient}` : null
+                    };
+                case 'DOT':
+                    return {
+                        txLink: tx.tx_id ? `https://polkascan.io/polkadot/transaction/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://polkascan.io/polkadot/account/${tx.recipient}` : null
+                    };
+                case 'XLM':
+                    return {
+                        txLink: tx.tx_id ? `https://stellar.expert/explorer/public/tx/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://stellar.expert/explorer/public/account/${tx.recipient}` : null
+                    };
+                case 'LTC':
+                    return {
+                        txLink: tx.tx_id ? `https://blockchair.com/litecoin/transaction/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://blockchair.com/litecoin/address/${tx.recipient}` : null
+                    };
+                case 'ARB':
+                    return {
+                        txLink: tx.tx_id ? `https://arbiscan.io/tx/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://arbiscan.io/address/${tx.recipient}` : null
+                    };
+                case 'ATOM':
+                    return {
+                        txLink: tx.tx_id ? `https://www.mintscan.io/cosmos/txs/${tx.tx_id}` : null,
+                        addressLink: tx.recipient ? `https://www.mintscan.io/cosmos/account/${tx.recipient}` : null
+                    };
+                default:
+                    return {
+                        txLink: null,
+                        addressLink: null
+                    };
+            }
+        }
+
+        async function fetchTransactions(apiKey) {
+            let page = 1;
+            let cursor = null;
+            const tbody = document.getElementById('transactionsTableBody');
+
+            transactions = [];
+            uniqueCoins.clear();
+
+            while (isFetching) {
+                updateStatus(`Fetching transaction page ${page}<span class="loading"></span>`);
+                const data = await apiFetch('/wallets/transactions', apiKey, {
+                    page_size: '500',
+                    ...(cursor && { cursor })
+                });
+
+                stats.totalProcessed += data.data.length;
+                log(`Processing ${data.data.length} transactions from page ${page}`);
+
+                for (const tx of data.data) {
+                    if (!isFetching) break;
+
+                    const attrs = tx.attributes;
+
+                    let skipReason = null;
+                    if (!['deposit', 'withdrawal'].includes(attrs.type)) {
+                        skipReason = `Transaction type "${attrs.type}" is not deposit/withdrawal`;
+                    } else if (!attrs.tx_id) {
+                        skipReason = 'Missing transaction ID';
+                    } else if (parseFloat(attrs.amount) <= 0) {
+                        skipReason = `Amount is zero or negative: ${attrs.amount}`;
+                    }
+
+                    if (skipReason) {
+                        stats.totalSkipped++;
+                        continue;
+                    }
+
+                    if (attrs.type === 'deposit') stats.totalDeposits++;
+                    if (attrs.type === 'withdrawal') stats.totalWithdrawals++;
+
+                    const coin = wallet_symbols[attrs.wallet_id];
+                    uniqueCoins.add(coin);
+
+                    transactions.push({
+                        time: new Date(attrs.time.date_iso8601).toLocaleString(),
+                        type: attrs.type,
+                        coin: coin,
+                        amount: attrs.amount,
+                        amount_eur: attrs.amount_eur ? `€${attrs.amount_eur}` : 'N/A',
+                        recipient: attrs.recipient,
+                        tx_id: attrs.tx_id,
+                        attrs: attrs // Store original attributes for explorer links
+                    });
+                }
+
+                updateCoinFilter();
+                displayTransactions();
+                updateStats();
+
+                if (!data.meta.next_cursor || !isFetching) {
+                    log('Finished fetching all transactions');
+                    break;
+                }
+                cursor = data.meta.next_cursor;
+                page++;
+            }
+
+            updateStatus(`Processed ${stats.totalProcessed} transactions`);
+        }
+
+        function updateCoinFilter() {
+            const coinFilter = document.getElementById('coinFilter');
+            coinFilter.innerHTML = '<option value="">All Coins</option>';
+            [...uniqueCoins].sort().forEach(coin => {
+                const option = document.createElement('option');
+                option.value = coin;
+                option.textContent = coin;
+                coinFilter.appendChild(option);
+            });
+        }
+
+        function displayTransactions() {
+            const tbody = document.getElementById('transactionsTableBody');
+            const typeFilter = document.getElementById('typeFilter').value;
+            const coinFilter = document.getElementById('coinFilter').value;
+
+            tbody.innerHTML = ''; // Clear existing rows
+
+            const filteredTransactions = transactions.filter(tx => {
+                if (typeFilter && tx.type !== typeFilter) return false;
+                if (coinFilter && tx.coin !== coinFilter) return false;
+                return true;
+            });
+
+            filteredTransactions.forEach(tx => {
+                const row = tbody.insertRow(0);
+                const { txLink, addressLink } = getExplorerLinks(tx.attrs, tx.coin);  // Get explorer links
+
+                row.insertCell(0).textContent = tx.time;
+                row.insertCell(1).textContent = tx.type;
+
+                const amountCell = row.insertCell(2);
+                amountCell.textContent = tx.amount;
+                amountCell.className = 'number';
+
+                row.insertCell(3).textContent = tx.coin;
+
+                const eurCell = row.insertCell(4);
+                eurCell.textContent = tx.amount_eur;
+                eurCell.className = 'number';
+
+                // Recipient cell with explorer link
+                const recipientCell = row.insertCell(5);
+                const shortRecipient = tx.recipient?.length > 10 ?
+                    `${tx.recipient.slice(0, 5)}...${tx.recipient.slice(-5)}` :
+                    tx.recipient;
+
+                const recipientContainer = document.createElement('div');
+                recipientContainer.style.display = 'flex';
+                recipientContainer.style.alignItems = 'center';
+                recipientContainer.style.gap = '8px';
+
+                if (tx.recipient) {
+                    const copyButton = document.createElement('button');
+                    copyButton.innerHTML = '📋';
+                    copyButton.title = 'Copy full recipient address';
+                    copyButton.className = 'copy-button';
+                    copyButton.onclick = async () => {
+                        try {
+                            await navigator.clipboard.writeText(tx.recipient);
+                            const originalText = copyButton.innerHTML;
+                            copyButton.innerHTML = '✓';
+                            setTimeout(() => {
+                                copyButton.innerHTML = originalText;
+                            }, 1000);
+                        } catch (err) {
+                            console.error('Failed to copy:', err);
+                        }
+                    };
+                    recipientContainer.appendChild(copyButton);
+                }
+
+                if (tx.recipient && addressLink) {  // Use addressLink from getExplorerLinks
+                    const link = document.createElement('a');
+                    link.href = addressLink;
+                    link.target = '_blank';
+                    link.textContent = shortRecipient;
+                    recipientContainer.appendChild(link);
+                } else {
+                    const span = document.createElement('span');
+                    span.textContent = shortRecipient || 'N/A';
+                    recipientContainer.appendChild(span);
+                }
+
+                recipientCell.appendChild(recipientContainer);
+
+                // Transaction ID cell with explorer link
+                const txCell = row.insertCell(6);
+                const shortTxId = tx.tx_id.length > 10 ?
+                    `${tx.tx_id.slice(0, 5)}...${tx.tx_id.slice(-5)}` :
+                    tx.tx_id;
+
+                const container = document.createElement('div');
+                container.style.display = 'flex';
+                container.style.alignItems = 'center';
+                container.style.gap = '8px';
+
+                const copyButton = document.createElement('button');
+                copyButton.innerHTML = '📋';
+                copyButton.title = 'Copy full transaction ID';
+                copyButton.className = 'copy-button';
+                copyButton.onclick = async () => {
+                    try {
+                        await navigator.clipboard.writeText(tx.tx_id);
+                        const originalText = copyButton.innerHTML;
+                        copyButton.innerHTML = '✓';
+                        setTimeout(() => {
+                            copyButton.innerHTML = originalText;
+                        }, 1000);
+                    } catch (err) {
+                        console.error('Failed to copy:', err);
+                    }
+                };
+                container.appendChild(copyButton);
+
+                if (txLink) {  // Use txLink from getExplorerLinks
+                    const link = document.createElement('a');
+                    link.href = txLink;
+                    link.target = '_blank';
+                    link.textContent = shortTxId;
+                    container.appendChild(link);
+                } else {
+                    const span = document.createElement('span');
+                    span.textContent = shortTxId;
+                    container.appendChild(span);
+                }
+
+                txCell.appendChild(container);
+            });
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML = message;
+            log(`Status: ${message}`);
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.style.display = 'block';
+            log(`Error: ${message}`, 'error');
+        }
+
+        // Add event listeners for filters
+        document.getElementById('typeFilter').addEventListener('change', displayTransactions);
+        document.getElementById('coinFilter').addEventListener('change', displayTransactions);
+
+        function toggleDebugLog() {
+            const debugLog = document.getElementById('debugLog');
+            const debugButton = document.getElementById('debugButton');
+            const isVisible = debugLog.style.display === 'block';
+
+            debugLog.style.display = isVisible ? 'none' : 'block';
+            debugButton.textContent = isVisible ? 'Show Debug Log' : 'Hide Debug Log';
+        }
+
+        function exportToCsv() {
+            if (!transactions.length) {
+                showError('No transactions to export. Please fetch data first.');
+                return;
+            }
+
+            const columns = [
+                'time',
+                'type',
+                'in_or_out',
+                'coin',
+                'amount',
+                'amount_eur',
+                'fee',
+                'tx_id',
+                'recipient',
+                'public_status',
+                'coin_network_id',
+                'wallet_id',
+            ];
+
+            // Create CSV header
+            const headers = columns.join(',');
+
+            // Create CSV rows
+            const rows = transactions.map(tx => {
+                const values = columns.map(col => {
+                    let value = '';
+                    switch (col) {
+                        case 'time':
+                            // Convert to UTC ISO string and remove the 'Z' and milliseconds
+                            value = new Date(tx.attrs.time.date_iso8601)
+                                .toISOString()
+                                .replace('.000Z', '');
+                            break;
+                        case 'coin':
+                            value = tx.coin;
+                            break;
+                        case 'type':
+                            value = tx.type;
+                            break;
+                        default:
+                            value = tx.attrs[col] || '';
+                    }
+                    // Escape quotes and wrap in quotes
+                    return `"${String(value).replace(/"/g, '""')}"`;
+                });
+                return values.join(',');
+            });
+
+            // Combine header and rows
+            const csv = [headers, ...rows].join('\n');
+
+            // Create and trigger download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'bitpanda_transactions.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function filterTransactions(type) {
+            const typeFilter = document.getElementById('typeFilter');
+            typeFilter.value = type;
+            displayTransactions();
+        }
+    </script>
+</body>
+
+</html>
