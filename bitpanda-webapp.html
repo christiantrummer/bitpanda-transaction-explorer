@@ -217,6 +217,14 @@
         .info p:last-child {
             margin-bottom: 0;
         }
+
+        .log {
+            font-family: monospace;
+            color: #666;
+            padding: 5px;
+            margin: 2px 0;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 
@@ -371,7 +379,7 @@
             });
         }
 
-        function log(message, type = 'info') {
+        function log(message, type = '') {
             const debugLog = document.getElementById('debugLog');
             const logEntry = document.createElement('div');
             logEntry.className = `log ${type}`;
