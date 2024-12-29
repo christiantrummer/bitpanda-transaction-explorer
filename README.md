@@ -2,6 +2,9 @@
 
 A local proxy server and web application for exploring your Bitpanda transactions with enhanced filtering and export capabilities.
 
+![Dashboard](dashboard.png)
+
+
 ## Features
 
 - 🔄 Real-time transaction fetching from Bitpanda API
