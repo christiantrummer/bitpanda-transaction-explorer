@@ -18,13 +18,13 @@ A local proxy server and web application for exploring your Bitpanda transaction
 
 1. Clone the repository
 2. Install dependencies using Poetry:
-```bash
-poetry install
-```
+   ```bash
+   poetry install
+   ```
 3. Run the application:
-```bash
-poetry run python proxy-server.py
-```
+   ```bash
+   poetry run python proxy-server.py
+   ```
 4. Open `bitpanda-webapp.html` in your browser.
 5. Create a new API key (https://web.bitpanda.com/my-account/apikey) in Bitpanda with the `Transaction` and `Balance` permissions. Paste the API key into the input field.
 6. Click "Fetch Transactions" to load your transactions.
