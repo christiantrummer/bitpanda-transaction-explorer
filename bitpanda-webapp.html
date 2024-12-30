@@ -360,7 +360,7 @@
     </div>
 
     <script>
-        const API_BASE = 'http://127.0.0.1:5000';
+        const API_BASE = 'https://api.bitpanda.com/v1';
         let wallet_symbols = {};
         let stats = {
             totalProcessed: 0,
@@ -402,9 +402,7 @@
                         'X-API-KEY': apiKey,
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
-                    },
-                    mode: 'cors',
-                    cache: 'no-cache'
+                    }
                 });
 
                 log(`Response status: ${response.status} ${response.statusText}`);
@@ -449,8 +447,6 @@
             updateStats();
 
             try {
-                await fetch(`${API_BASE}/health`);
-                log('Proxy server is running', 'success');
                 await fetchWallets(apiKey);
                 if (isFetching) {
                     await fetchTransactions(apiKey);
