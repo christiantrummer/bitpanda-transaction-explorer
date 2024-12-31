@@ -225,12 +225,50 @@
             margin: 2px 0;
             font-size: 0.9em;
         }
+        @media (max-width: 600px){
+            #title{
+                font-size: 5vw;
+            }
+            .info{
+                font-size: 2.5vw;
+            }
+            .api-interface{
+                flex-direction: column;
+            }
+            #apiKey {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .button-group{
+                justify-content: flex-start;
+            }
+        }
+        @media (max-width: 1200px){
+            .table-container {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-bottom: 20px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th, td {
+                padding: 8px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+                white-space: nowrap; /* Verhindert Zeilenumbrüche */
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>Bitpanda Transaction Explorer</h1>
+        <h1 id="title">Bitpanda Transaction Explorer</h1>
 
         <div class="info">
             <p>
@@ -249,7 +287,7 @@
             </p>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+        <div class="api-interface" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
             <input type="text" id="apiKey" placeholder="Enter your API key">
             <div class="button-group">
                 <button onclick="fetchData()" id="fetchButton">Fetch Data</button>
@@ -303,20 +341,22 @@
                     <option value="">All Coins</option>
                 </select>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Type</th>
-                        <th class="number">Amount</th>
-                        <th>Coin</th>
-                        <th class="number">EUR Value</th>
-                        <th>Recipient</th>
-                        <th>Transaction ID</th>
-                    </tr>
-                </thead>
-                <tbody id="transactionsTableBody"></tbody>
-            </table>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th class="number">Amount</th>
+                            <th>Coin</th>
+                            <th class="number">EUR Value</th>
+                            <th>Recipient</th>
+                            <th>Transaction ID</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody"></tbody>
+                </table>
+            </div>
         </div>
 
         <hr>
@@ -330,31 +370,35 @@
             <div style="margin-bottom: 15px;">
                 <button onclick="queryBalances()" class="button">Query balances</button>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Address</th>
-                        <th class="number">Balance</th>
-                    </tr>
-                </thead>
-                <tbody id="blockchainWalletsTableBody"></tbody>
-            </table>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Address</th>
+                            <th class="number">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="blockchainWalletsTableBody"></tbody>
+                </table>
+            </div>
         </div>
 
         <hr>
         <div id="wallets">
             <h2>Bitpanda Wallets</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Symbol</th>
-                        <th class="number">Balance</th>
-                    </tr>
-                </thead>
-                <tbody id="walletsTableBody"></tbody>
-            </table>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Symbol</th>
+                            <th class="number">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="walletsTableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
     </div>
