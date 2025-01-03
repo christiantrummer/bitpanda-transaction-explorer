@@ -263,6 +263,46 @@
                 white-space: nowrap; /* Verhindert Zeilenumbrüche */
             }
         }
+
+        #saveKeyButton.active {
+            background: #28a745;
+        }
+
+        #clearKeyButton {
+            background: #dc3545;
+        }
+
+        #clearKeyButton:hover {
+            background: #bd2130;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8em;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 
@@ -281,9 +321,10 @@
                 <li>Enable only the "Transactions" and "Balances" permissions</li>
                 <li>Copy the generated API key and paste it below</li>
                 <li>Click "Fetch Data" to start fetching your transactions and balances</li>
+                <li>Optionally, click "Save Key" to store your API key in your browser's local storage for future use</li>
             </ol>
             <p>
-                Note: This webapp runs completely in your browser - your API key is only used locally to fetch data and is never sent anywhere else.
+                Note: This webapp runs completely in your browser - your API key is only used locally to fetch data and is never sent anywhere else. If you choose to save your API key, it will be stored securely in your browser's local storage and can be removed at any time using the "Clear Key" button.
             </p>
         </div>
 
@@ -294,6 +335,8 @@
                 <button onclick="stopFetching()" id="stopButton" style="display: none;">Stop</button>
                 <button onclick="exportToCsv()" id="exportButton">Export as CSV</button>
                 <button onclick="toggleDebugLog()" id="debugButton">Show Debug Log</button>
+                <button onclick="toggleSaveApiKey()" id="saveKeyButton" title="Save API key in browser">💾 Save API key</button>
+                <button onclick="clearSavedApiKey()" id="clearKeyButton" title="Remove saved API key" style="display: none;">🗑️ Clear API key</button>
             </div>
         </div>
 
@@ -1092,6 +1135,87 @@
                 }
             }
         }
+
+        // API Key Management Functions
+        function saveApiKey() {
+            const apiKey = document.getElementById('apiKey').value;
+            if (apiKey) {
+                localStorage.setItem('bitpandaApiKey', apiKey);
+                updateApiKeyButtons(true);
+                showToast('API key saved successfully');
+            }
+        }
+
+        function loadSavedApiKey() {
+            const savedApiKey = localStorage.getItem('bitpandaApiKey');
+            if (savedApiKey) {
+                document.getElementById('apiKey').value = savedApiKey;
+                updateApiKeyButtons(true);
+            }
+        }
+
+        function clearSavedApiKey() {
+            localStorage.removeItem('bitpandaApiKey');
+            document.getElementById('apiKey').value = '';
+            updateApiKeyButtons(false);
+            showToast('API key removed');
+        }
+
+        function toggleSaveApiKey() {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) {
+                showError('Please enter an API key first');
+                return;
+            }
+            saveApiKey();
+        }
+
+        function updateApiKeyButtons(saved) {
+            const saveButton = document.getElementById('saveKeyButton');
+            const clearButton = document.getElementById('clearKeyButton');
+            
+            if (saved) {
+                saveButton.classList.add('active');
+                saveButton.innerHTML = '✓ API key Saved';
+                clearButton.style.display = 'inline-block';
+            } else {
+                saveButton.classList.remove('active');
+                saveButton.innerHTML = '💾 Save Key';
+                clearButton.style.display = 'none';
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.backgroundColor = '#333';
+            toast.style.color = 'white';
+            toast.style.padding = '10px 20px';
+            toast.style.borderRadius = '4px';
+            toast.style.zIndex = '1000';
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Add this to your existing initialization code
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSavedApiKey();
+            
+            // Add input event listener to update save button state
+            document.getElementById('apiKey').addEventListener('input', () => {
+                const savedKey = localStorage.getItem('bitpandaApiKey');
+                const currentKey = document.getElementById('apiKey').value;
+                updateApiKeyButtons(savedKey === currentKey);
+            });
+        });
     </script>
 </body>
 
