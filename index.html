@@ -313,6 +313,59 @@
             font-weight: 600;
             letter-spacing: -0.5px;
         }
+
+        .api-interface {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .api-interface input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .button-group button {
+            flex: 1 1 auto;
+            min-width: 120px;
+            max-width: 200px;
+            white-space: nowrap;
+            padding: 8px 16px;
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 768px) {
+            .api-interface {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+
+            .api-interface input {
+                width: 300px;
+                flex-shrink: 0;
+            }
+
+            .button-group {
+                flex: 1;
+            }
+        }
+
+        /* Ensure buttons don't get too small on very narrow screens */
+        @media (max-width: 480px) {
+            .button-group button {
+                flex: 1 1 calc(50% - 8px);
+                min-width: calc(50% - 8px);
+            }
+        }
     </style>
 </head>
 
@@ -338,7 +391,7 @@
             </p>
         </div>
 
-        <div class="api-interface" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+        <div class="api-interface">
             <input type="text" id="apiKey" placeholder="Enter your API key">
             <div class="button-group">
                 <button onclick="fetchData()" id="fetchButton">Fetch Data</button>
