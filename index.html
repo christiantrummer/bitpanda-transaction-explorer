@@ -366,6 +366,44 @@
                 min-width: calc(50% - 8px);
             }
         }
+
+        /* Add this new CSS for the filter dropdowns */
+        .filter-container {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        select {
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: white;
+            min-width: 150px;
+            cursor: pointer;
+        }
+
+        select:hover {
+            border-color: #b8bfc6;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+
+        /* Add responsive styles for the filters */
+        @media (max-width: 600px) {
+            .filter-container {
+                flex-direction: column;
+            }
+            
+            select {
+                width: 100%;
+                min-width: unset;
+            }
+        }
     </style>
 </head>
 
@@ -437,7 +475,7 @@
                 Here are all your blockchain transactions from your Bitpanda account or to your Bitpanda account (deposits and withdrawals). The EUR value shown is the value at the time of the transaction.
             </div>
 
-            <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+            <div class="filter-container">
                 <select id="typeFilter">
                     <option value="">All Types</option>
                     <option value="deposit">Deposit</option>
