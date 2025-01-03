@@ -434,7 +434,6 @@
             <div class="button-group">
                 <button onclick="fetchData()" id="fetchButton">Fetch Data</button>
                 <button onclick="stopFetching()" id="stopButton" style="display: none;">Stop</button>
-                <button onclick="exportToCsv()" id="exportButton">Export as CSV</button>
                 <button onclick="toggleDebugLog()" id="debugButton">Show Debug Log</button>
                 <button onclick="toggleSaveApiKey()" id="saveKeyButton" title="Save API key in browser">💾 Save API key</button>
                 <button onclick="clearSavedApiKey()" id="clearKeyButton" title="Remove saved API key" style="display: none;">🗑️ Clear API key</button>
@@ -484,6 +483,7 @@
                 <select id="coinFilter">
                     <option value="">All Coins</option>
                 </select>
+                <button onclick="exportToCsv()" class="button">Export as CSV</button>
             </div>
             <div class="table-container">
                 <table>
