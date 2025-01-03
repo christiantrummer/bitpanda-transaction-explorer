@@ -519,6 +519,7 @@
                     <thead>
                         <tr>
                             <th>Symbol</th>
+                            <th>Type</th>
                             <th>Address</th>
                             <th class="number">Balance</th>
                         </tr>
@@ -576,7 +577,7 @@
         let isFetching = false;  // Add this at the top with your other variables
         let transactions = [];
         let uniqueCoins = new Set();
-        let uniqueWallets = new Map(); // Map to store coin -> Set of addresses
+        let uniqueWallets = new Map(); // Map to store coin -> Map of addresses -> Set of types
 
         function updateStats() {
             Object.keys(stats).forEach(key => {
@@ -829,9 +830,13 @@
                     // Add this new code to collect unique addresses
                     if (attrs.recipient) {
                         if (!uniqueWallets.has(coin)) {
-                            uniqueWallets.set(coin, new Set());
+                            uniqueWallets.set(coin, new Map());
                         }
-                        uniqueWallets.get(coin).add(attrs.recipient);
+                        const addressMap = uniqueWallets.get(coin);
+                        if (!addressMap.has(attrs.recipient)) {
+                            addressMap.set(attrs.recipient, new Set());
+                        }
+                        addressMap.get(attrs.recipient).add(attrs.type);
                         updateBlockchainWallets();
                     }
 
@@ -1097,63 +1102,70 @@
             const tbody = document.getElementById('blockchainWalletsTableBody');
             tbody.innerHTML = '';
 
-            // Convert Map to array and sort by coin symbol
             [...uniqueWallets.entries()]
                 .sort(([coinA], [coinB]) => coinA.localeCompare(coinB))
-                .forEach(([coin, addresses]) => {
-                    // Sort addresses within each coin
-                    [...addresses].sort().forEach(address => {
-                        const row = tbody.insertRow();
-                        // Store full address as data attribute
-                        row.setAttribute('data-address', address);
-                        
-                        row.insertCell(0).textContent = coin;
-                        
-                        const addressCell = row.insertCell(1);
-                        const { addressLink } = getExplorerLinks({ recipient: address }, coin);
-                        const shortAddress = shortenAddress(address);
-                        
-                        const container = document.createElement('div');
-                        container.style.display = 'flex';
-                        container.style.alignItems = 'center';
-                        container.style.gap = '8px';
+                .forEach(([coin, addressMap]) => {
+                    [...addressMap.entries()]
+                        .sort(([addrA], [addrB]) => addrA.localeCompare(addrB))
+                        .forEach(([address, types]) => {
+                            const row = tbody.insertRow();
+                            row.setAttribute('data-address', address);
+                            
+                            // Symbol cell
+                            row.insertCell(0).textContent = coin;
+                            
+                            // Type cell
+                            const typeCell = row.insertCell(1);
+                            const typeArray = [...types];
+                            typeCell.textContent = typeArray.length === 2 ? 
+                                'Deposit/Withdrawal' : 
+                                typeArray[0].charAt(0).toUpperCase() + typeArray[0].slice(1);
+                            
+                            // Address cell
+                            const addressCell = row.insertCell(2);
+                            const { addressLink } = getExplorerLinks({ recipient: address }, coin);
+                            const shortAddress = shortenAddress(address);
+                            
+                            const container = document.createElement('div');
+                            container.style.display = 'flex';
+                            container.style.alignItems = 'center';
+                            container.style.gap = '8px';
 
-                        // Add copy button
-                        const copyButton = document.createElement('button');
-                        copyButton.innerHTML = '📋';
-                        copyButton.title = 'Copy address';
-                        copyButton.className = 'copy-button';
-                        copyButton.onclick = async () => {
-                            try {
-                                await navigator.clipboard.writeText(address);
-                                const originalText = copyButton.innerHTML;
-                                copyButton.innerHTML = '✓';
-                                setTimeout(() => copyButton.innerHTML = originalText, 1000);
-                            } catch (err) {
-                                console.error('Failed to copy:', err);
+                            const copyButton = document.createElement('button');
+                            copyButton.innerHTML = '📋';
+                            copyButton.title = 'Copy address';
+                            copyButton.className = 'copy-button';
+                            copyButton.onclick = async () => {
+                                try {
+                                    await navigator.clipboard.writeText(address);
+                                    const originalText = copyButton.innerHTML;
+                                    copyButton.innerHTML = '✓';
+                                    setTimeout(() => copyButton.innerHTML = originalText, 1000);
+                                } catch (err) {
+                                    console.error('Failed to copy:', err);
+                                }
+                            };
+                            container.appendChild(copyButton);
+
+                            if (addressLink) {
+                                const link = document.createElement('a');
+                                link.href = addressLink;
+                                link.target = '_blank';
+                                link.textContent = shortAddress;
+                                container.appendChild(link);
+                            } else {
+                                const span = document.createElement('span');
+                                span.textContent = shortAddress;
+                                container.appendChild(span);
                             }
-                        };
-                        container.appendChild(copyButton);
 
-                        // Add address with explorer link if available
-                        if (addressLink) {
-                            const link = document.createElement('a');
-                            link.href = addressLink;
-                            link.target = '_blank';
-                            link.textContent = shortAddress;
-                            container.appendChild(link);
-                        } else {
-                            const span = document.createElement('span');
-                            span.textContent = shortAddress;
-                            container.appendChild(span);
-                        }
+                            addressCell.appendChild(container);
 
-                        const balanceCell = row.insertCell(2);
-                        balanceCell.className = 'number';
-                        balanceCell.textContent = 'Click on "Query balances"';
-
-                        addressCell.appendChild(container);
-                    });
+                            // Balance cell
+                            const balanceCell = row.insertCell(3);
+                            balanceCell.className = 'number';
+                            balanceCell.textContent = 'Click on "Query balances"';
+                        });
                 });
         }
 
@@ -1168,7 +1180,7 @@
                 let balance = null;
 
                 // Create or get balance cell
-                let balanceCell = row.cells[2];
+                let balanceCell = row.cells[3];
                 balanceCell.textContent = 'Querying...';
 
                 try {
