@@ -512,6 +512,7 @@
             </div>
             
             <div style="margin-bottom: 15px;">
+                <button onclick="exportWalletsCSV()" class="button" style="margin-right: 10px;">Export as CSV</button>
                 <button onclick="queryBalances()" class="button">Query balances</button>
             </div>
             <div class="table-container">
@@ -1346,6 +1347,44 @@
                 updateApiKeyButtons(savedKey === currentKey);
             });
         });
+
+        // Add this new function for CSV export
+        function exportWalletsCSV() {
+            if (!uniqueWallets.size) {
+                showError('No blockchain wallets to export. Please fetch data first.');
+                return;
+            }
+
+            const columns = ['symbol', 'type', 'address'];
+            const headers = columns.join(',');
+
+            const rows = [];
+            uniqueWallets.forEach((addressMap, coin) => {
+                addressMap.forEach((types, address) => {
+                    const typeStr = [...types].length === 2 ? 
+                        'Deposit/Withdrawal' : 
+                        [...types][0].charAt(0).toUpperCase() + [...types][0].slice(1);
+                    
+                    rows.push([
+                        `"${coin}"`,
+                        `"${typeStr}"`,
+                        `"${address}"`
+                    ].join(','));
+                });
+            });
+
+            const csv = [headers, ...rows].join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'bitpanda_blockchain_wallets.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     </script>
 </body>
 
