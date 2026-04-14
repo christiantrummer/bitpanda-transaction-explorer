@@ -5,565 +5,811 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitpanda Transaction Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg: #0b0d14;
+            --bg-2: #131621;
+            --bg-card: #1a1e2e;
+            --bg-card-hover: #1f2438;
+            --border: #2a2f45;
+            --border-light: #1e2338;
+            --accent: #e8612a;
+            --accent-2: #f0a500;
+            --accent-glow: rgba(232, 97, 42, 0.18);
+            --text: #e2e8f0;
+            --text-muted: #7c8aaa;
+            --text-dim: #4a5568;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.12);
+            --info: #3b82f6;
+            --info-bg: rgba(59, 130, 246, 0.1);
+            --deposit-color: #22c55e;
+            --deposit-bg: rgba(34, 197, 94, 0.12);
+            --withdrawal-color: #f59e0b;
+            --withdrawal-bg: rgba(245, 158, 11, 0.12);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px auto;
-            padding: 0 20px;
-            background: #f5f5f5;
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
         }
 
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
+        /* ── Header ─────────────────────────────────────────────── */
+        .site-header {
+            background: linear-gradient(135deg, #0f1320 0%, #161b2e 50%, #0f1320 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 28px 24px 24px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .status {
-            color: #666;
-            margin: 10px 0;
-        }
-
-        .error {
-            color: #dc3545;
-            padding: 10px;
-            background: #f8d7da;
-            border-radius: 4px;
-            margin: 10px 0;
-            white-space: pre-line;
-        }
-
-        .log {
-            font-family: monospace;
-            color: #666;
-            padding: 5px;
-            margin: 2px 0;
-            font-size: 0.9em;
-        }
-
-        .log.error {
-            color: #dc3545;
-            background: none;
-        }
-
-        .log.success {
-            color: #28a745;
-        }
-
-        #debugLog {
-            max-height: 200px;
-            overflow-y: auto;
-            margin: 20px 0;
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-        input {
-            padding: 8px;
-            width: 300px;
-            margin-right: 10px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-        }
-
-        button {
-            padding: 8px 16px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #0056b3;
-        }
-
-        .collapsible {
-            background: #f1f1f1;
-            cursor: pointer;
-            padding: 10px;
-            width: 100%;
-            border: none;
-            text-align: left;
-            margin: 5px 0;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-
-        th,
-        td {
-            padding: 8px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #f8f9fa;
-        }
-
-        tr:hover {
-            background-color: #f5f5f5;
-        }
-
-        td.number,
-        th.number {
-            text-align: right;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .stat-card {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #dee2e6;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 5px 0;
-        }
-
-        .stat-label {
-            color: #666;
-        }
-
-        .loading {
-            display: inline-block;
-            margin-left: 10px;
-        }
-
-        .loading:after {
+        .site-header::before {
             content: '';
-            animation: dots 1.5s steps(5, end) infinite;
+            position: absolute;
+            top: -60px; left: -60px;
+            width: 260px; height: 260px;
+            background: radial-gradient(circle, rgba(232, 97, 42, 0.12) 0%, transparent 70%);
+            pointer-events: none;
         }
 
-        @keyframes dots {
-
-            0%,
-            20% {
-                content: '.';
-            }
-
-            40% {
-                content: '..';
-            }
-
-            60%,
-            100% {
-                content: '...';
-            }
+        .site-header::after {
+            content: '';
+            position: absolute;
+            bottom: -80px; right: -40px;
+            width: 320px; height: 320px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.07) 0%, transparent 70%);
+            pointer-events: none;
         }
 
-        .button-group {
+        .header-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-row {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 14px;
+            margin-bottom: 4px;
         }
 
-        #stopButton {
-            background: #dc3545;
-        }
-
-        #stopButton:hover {
-            background: #bd2130;
-        }
-
-        .copy-button {
-            padding: 2px 6px;
-            font-size: 12px;
-            cursor: pointer;
-        }
-
-        .stat-card.clickable {
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .stat-card.clickable:hover {
-            background-color: #e9ecef;
-        }
-
-        .info {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            border-left: 4px solid #0d6efd;
-            font-style: italic;
-            font-size: 0.9em;
-            color: #495057;
-            line-height: 1.5;
-        }
-
-        .info p {
-            margin: 0 0 10px 0;
-        }
-
-        .info p:last-child {
-            margin-bottom: 0;
-        }
-
-        .log {
-            font-family: monospace;
-            color: #666;
-            padding: 5px;
-            margin: 2px 0;
-            font-size: 0.9em;
-        }
-        @media (max-width: 600px){
-            #title{
-                font-size: 5vw;
-            }
-            .info{
-                font-size: 2.5vw;
-            }
-            .api-interface{
-                flex-direction: column;
-            }
-            #apiKey {
-                width: 100%;
-                box-sizing: border-box;
-            }
-            .button-group{
-                justify-content: flex-start;
-            }
-        }
-        @media (max-width: 1200px){
-            .table-container {
-                width: 100%;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                margin-bottom: 20px;
-            }
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-
-            th, td {
-                padding: 8px;
-                text-align: left;
-                border-bottom: 1px solid #ddd;
-                white-space: nowrap; /* Verhindert Zeilenumbrüche */
-            }
-        }
-
-        #saveKeyButton.active {
-            background: #28a745;
-        }
-
-        #clearKeyButton {
-            background: #dc3545;
-        }
-
-        #clearKeyButton:hover {
-            background: #bd2130;
-        }
-
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: #555;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 0.8em;
-        }
-
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(232, 97, 42, 0.35);
         }
 
         #title {
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #1a1a1a;
-            font-size: 2.2em;
-            font-weight: 600;
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 700;
             letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #fff 40%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
+        .header-sub {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 2px;
+        }
+
+        /* ── Layout ──────────────────────────────────────────────── */
+        .page-body {
+            padding: 28px 20px 60px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        section h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin: 0 0 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        section h2::before {
+            content: '';
+            display: inline-block;
+            width: 3px; height: 18px;
+            background: linear-gradient(180deg, var(--accent), var(--accent-2));
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        /* ── Info box ────────────────────────────────────────────── */
+        .info {
+            background: var(--info-bg);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-left: 3px solid var(--info);
+            border-radius: var(--radius-sm);
+            padding: 16px 18px;
+            font-size: 0.875rem;
+            color: #94a3b8;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .info p { margin: 0 0 10px; }
+        .info p:last-child { margin-bottom: 0; }
+
+        .info a { color: #60a5fa; text-decoration: none; }
+        .info a:hover { text-decoration: underline; }
+
+        .info ol {
+            margin: 8px 0 0;
+            padding-left: 20px;
+        }
+
+        .info li { margin-bottom: 4px; }
+
+        /* ── API Interface ───────────────────────────────────────── */
         .api-interface {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 12px;
         }
 
-        .api-interface input {
+        .input-wrapper {
+            position: relative;
+        }
+
+        input[type="text"] {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
+            padding: 11px 16px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
         }
 
+        input[type="text"]::placeholder { color: var(--text-dim); }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        /* ── Buttons ─────────────────────────────────────────────── */
         .button-group {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
         }
 
-        .button-group button {
-            flex: 1 1 auto;
-            min-width: 120px;
-            max-width: 200px;
+        button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.18s ease;
             white-space: nowrap;
-            padding: 8px 16px;
         }
 
-        /* Responsive adjustments */
+        /* Primary */
+        #fetchButton {
+            background: linear-gradient(135deg, var(--accent), #c0481a);
+            color: #fff;
+            box-shadow: 0 2px 12px rgba(232, 97, 42, 0.3);
+        }
+        #fetchButton:hover:not(:disabled) {
+            background: linear-gradient(135deg, #f0703a, var(--accent));
+            box-shadow: 0 4px 20px rgba(232, 97, 42, 0.45);
+            transform: translateY(-1px);
+        }
+        #fetchButton:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Stop */
+        #stopButton {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        #stopButton:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger);
+        }
+
+        /* Secondary ghost buttons */
+        #debugButton, #saveKeyButton {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+        #debugButton:hover, #saveKeyButton:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        #saveKeyButton.active {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--success);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        #clearKeyButton {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        #clearKeyButton:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger);
+        }
+
+        /* Generic action buttons (Export, Query) */
+        .btn-action {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            font-size: 0.82rem;
+        }
+        .btn-action:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .copy-button {
+            background: rgba(255,255,255,0.06);
+            color: var(--text-muted);
+            border: 1px solid var(--border-light);
+            padding: 2px 7px;
+            font-size: 11px;
+            border-radius: 5px;
+            flex-shrink: 0;
+        }
+        .copy-button:hover {
+            background: rgba(255,255,255,0.12);
+            color: var(--text);
+        }
+
+        /* ── Status / Error / Debug ──────────────────────────────── */
+        .status {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin: 12px 0 0;
+            min-height: 20px;
+        }
+
+        .error {
+            color: #fca5a5;
+            padding: 12px 16px;
+            background: var(--danger-bg);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius-sm);
+            margin: 12px 0 0;
+            font-size: 0.875rem;
+            white-space: pre-line;
+            display: none;
+        }
+
+        #debugLog {
+            max-height: 220px;
+            overflow-y: auto;
+            margin: 16px 0 0;
+            background: #0a0c14;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            display: none;
+        }
+
+        .log {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            color: var(--text-muted);
+            padding: 2px 0;
+            font-size: 0.78rem;
+        }
+
+        .log.error { color: #f87171; }
+        .log.success { color: var(--success); }
+
+        /* ── Loading animation ───────────────────────────────────── */
+        .loading {
+            display: inline-block;
+            margin-left: 4px;
+        }
+        .loading:after {
+            content: '';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20%  { content: '.'; }
+            40%      { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* ── Stat cards ──────────────────────────────────────────── */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+        }
+
+        .stat-card {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 18px;
+            text-align: center;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .stat-card.clickable {
+            cursor: pointer;
+        }
+
+        .stat-card.clickable:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(232, 97, 42, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .stat-card.clickable:hover::before { opacity: 1; }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.2;
+            margin: 6px 0;
+        }
+
+        .stat-label {
+            font-size: 0.78rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+
+        /* ── Tables ──────────────────────────────────────────────── */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        th {
+            background: #111525;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            text-align: left;
+        }
+
+        td {
+            padding: 11px 14px;
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text);
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+
+        tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.025);
+        }
+
+        td.number, th.number { text-align: right; font-variant-numeric: tabular-nums; }
+
+        table a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        table a:hover { text-decoration: underline; }
+
+        /* Type badges */
+        .badge {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .badge-deposit {
+            background: var(--deposit-bg);
+            color: var(--deposit-color);
+            border: 1px solid rgba(34, 197, 94, 0.25);
+        }
+
+        .badge-withdrawal {
+            background: var(--withdrawal-bg);
+            color: var(--withdrawal-color);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .badge-both {
+            background: rgba(139, 92, 246, 0.12);
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.25);
+        }
+
+        /* ── Filters ─────────────────────────────────────────────── */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 9px 14px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            cursor: pointer;
+            min-width: 140px;
+            outline: none;
+            appearance: auto;
+            transition: border-color 0.2s;
+        }
+
+        select:hover { border-color: rgba(255,255,255,0.2); }
+        select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        select option { background: #1a1e2e; }
+
+        .spacer { flex: 1; }
+
+        /* ── Divider ─────────────────────────────────────────────── */
+        .section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 8px 0 24px;
+        }
+
+        /* ── Tooltip ─────────────────────────────────────────────── */
+        .tooltip { position: relative; display: inline-block; }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background: #1e2338;
+            color: var(--text);
+            text-align: center;
+            border-radius: 6px;
+            padding: 6px 10px;
+            position: absolute;
+            z-index: 10;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 0.78rem;
+            border: 1px solid var(--border);
+            white-space: normal;
+        }
+        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+
+        /* ── Footer ──────────────────────────────────────────────── */
+        footer {
+            text-align: center;
+            padding: 32px 20px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        footer a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.18s;
+        }
+        footer a:hover { color: var(--text); }
+
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.18s;
+            margin-top: 12px;
+        }
+        .github-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        /* ── Responsive ──────────────────────────────────────────── */
         @media (min-width: 768px) {
             .api-interface {
                 flex-direction: row;
                 align-items: flex-start;
             }
-
-            .api-interface input {
-                width: 300px;
-                flex-shrink: 0;
+            .input-wrapper {
+                flex: 0 0 320px;
             }
-
             .button-group {
                 flex: 1;
             }
         }
 
-        /* Ensure buttons don't get too small on very narrow screens */
-        @media (max-width: 480px) {
-            .button-group button {
-                flex: 1 1 calc(50% - 8px);
-                min-width: calc(50% - 8px);
-            }
-        }
-
-        /* Add this new CSS for the filter dropdowns */
-        .filter-container {
-            margin-bottom: 15px;
-            display: flex;
-            gap: 10px;
-        }
-
-        select {
-            padding: 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            background-color: white;
-            min-width: 150px;
-            cursor: pointer;
-        }
-
-        select:hover {
-            border-color: #b8bfc6;
-        }
-
-        select:focus {
-            outline: none;
-            border-color: #80bdff;
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-        }
-
-        /* Add responsive styles for the filters */
         @media (max-width: 600px) {
-            .filter-container {
-                flex-direction: column;
-            }
-            
-            select {
-                width: 100%;
-                min-width: unset;
-            }
+            #title { font-size: 1.3rem; }
+            .site-header { padding: 20px 16px; }
+            .page-body { padding: 18px 14px 40px; }
+            .card { padding: 18px; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            select { width: 100%; }
+            .button-group button { flex: 1 1 calc(50% - 4px); min-width: 0; }
+            .stat-value { font-size: 1.5rem; }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1 id="title">Bitpanda Transaction Explorer</h1>
 
-        <div class="info">
-            <p>
-                This tool can fetch all blockchain related deposits and withdrawals from your personal Bitpanda account to give you more insights about all your used blockchain addresses.
-                To use this webapp, you'll need a read-only API key from your Bitpanda account:
-            </p>
-            <ol>
-                <li>Go to <a href="https://web.bitpanda.com/my-account/apikey" target="_blank">https://web.bitpanda.com/my-account/apikey</a></li>
-                <li>Click "Create API Key"</li>
-                <li>Enable only the "Transactions" and "Balances" permissions</li>
-                <li>Copy the generated API key and paste it below</li>
-                <li>Click "Fetch Data" to start fetching your transactions and balances</li>
-                <li>Optionally, click "Save Key" to store your API key in your browser's local storage for future use</li>
-            </ol>
-            <p>
-                Note: This webapp runs completely in your browser - your API key is only used locally to fetch data and is never sent anywhere else. If you choose to save your API key, it will be stored securely in your browser's local storage and can be removed at any time using the "Clear Key" button.
-            </p>
-        </div>
-
-        <div class="api-interface">
-            <input type="text" id="apiKey" placeholder="Enter your API key">
-            <div class="button-group">
-                <button onclick="fetchData()" id="fetchButton">Fetch Data</button>
-                <button onclick="stopFetching()" id="stopButton" style="display: none;">Stop</button>
-                <button onclick="toggleDebugLog()" id="debugButton">Show Debug Log</button>
-                <button onclick="toggleSaveApiKey()" id="saveKeyButton" title="Save API key in browser">💾 Save API key</button>
-                <button onclick="clearSavedApiKey()" id="clearKeyButton" title="Remove saved API key" style="display: none;">🗑️ Clear API key</button>
+    <!-- ── Header ─────────────────────────────────────────────── -->
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="logo-row">
+                <div class="logo-icon">₿</div>
+                <h1 id="title">Bitpanda Transaction Explorer</h1>
             </div>
+            <p class="header-sub">Explore your blockchain deposits &amp; withdrawals from Bitpanda</p>
         </div>
+    </header>
 
-        <div id="error" class="error" style="display: none;"></div>
-        <div id="status" class="status"></div>
-        <div id="debugLog" style="display: none;"></div>
+    <main class="page-body">
 
-        <div id="stats">
-            <h2>Transaction Statistics</h2>
-            <div class="stats">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalProcessed">0</div>
-                    <div class="stat-label">Total Processed</div>
+        <!-- ── API Key Card ──────────────────────────────────────── -->
+        <div class="card">
+            <div class="info">
+                <p>
+                    This tool fetches all blockchain deposits and withdrawals from your Bitpanda account, giving you insight into all your blockchain addresses.
+                    You'll need a read-only API key:
+                </p>
+                <ol>
+                    <li>Go to <a href="https://web.bitpanda.com/my-account/apikey" target="_blank">web.bitpanda.com/my-account/apikey</a></li>
+                    <li>Click "Create API Key" — enable only <strong>Transactions</strong> and <strong>Balances</strong> permissions</li>
+                    <li>Paste the key below and click <strong>Fetch Data</strong></li>
+                    <li>Optionally click <strong>Save Key</strong> to persist it in your browser's local storage</li>
+                </ol>
+                <p>Your API key is only used locally — it is never sent anywhere else.</p>
+            </div>
+
+            <div class="api-interface">
+                <div class="input-wrapper">
+                    <input type="text" id="apiKey" placeholder="Paste your Bitpanda API key…">
                 </div>
-                <div class="stat-card clickable" onclick="filterTransactions('deposit')">
-                    <div class="stat-value" id="totalDeposits">0</div>
-                    <div class="stat-label">Deposits</div>
-                </div>
-                <div class="stat-card clickable" onclick="filterTransactions('withdrawal')">
-                    <div class="stat-value" id="totalWithdrawals">0</div>
-                    <div class="stat-label">Withdrawals</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="totalSkipped">0</div>
-                    <div class="stat-label">Skipped</div>
+                <div class="button-group">
+                    <button onclick="fetchData()" id="fetchButton">Fetch Data</button>
+                    <button onclick="stopFetching()" id="stopButton" style="display: none;">Stop</button>
+                    <button onclick="toggleDebugLog()" id="debugButton">Debug Log</button>
+                    <button onclick="toggleSaveApiKey()" id="saveKeyButton" title="Save API key in browser">💾 Save Key</button>
+                    <button onclick="clearSavedApiKey()" id="clearKeyButton" title="Remove saved API key" style="display: none;">🗑️ Clear Key</button>
                 </div>
             </div>
+
+            <div id="error" class="error"></div>
+            <div id="status" class="status"></div>
+            <div id="debugLog"></div>
         </div>
 
-        <hr>
-        <div id="transactions">
-            <h2>Transactions</h2>
-
-            <div class="info" style="margin-bottom: 15px;">
-                Here are all your blockchain transactions from your Bitpanda account or to your Bitpanda account (deposits and withdrawals). The EUR value shown is the value at the time of the transaction.
-            </div>
-
-            <div class="filter-container">
-                <select id="typeFilter">
-                    <option value="">All Types</option>
-                    <option value="deposit">Deposit</option>
-                    <option value="withdrawal">Withdrawal</option>
-                </select>
-                <select id="coinFilter">
-                    <option value="">All Coins</option>
-                </select>
-                <button onclick="exportToCsv()" class="button">Export as CSV</button>
-            </div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Type</th>
-                            <th class="number">Amount</th>
-                            <th>Coin</th>
-                            <th class="number">EUR Value</th>
-                            <th>Recipient</th>
-                            <th>Transaction ID</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactionsTableBody"></tbody>
-                </table>
-            </div>
+        <!-- ── Stats ─────────────────────────────────────────────── -->
+        <div class="card" id="stats">
+            <section>
+                <h2>Transaction Statistics</h2>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Processed</div>
+                        <div class="stat-value" id="totalProcessed">0</div>
+                    </div>
+                    <div class="stat-card clickable" onclick="filterTransactions('deposit')">
+                        <div class="stat-label">Deposits</div>
+                        <div class="stat-value" id="totalDeposits" style="color: var(--deposit-color)">0</div>
+                    </div>
+                    <div class="stat-card clickable" onclick="filterTransactions('withdrawal')">
+                        <div class="stat-label">Withdrawals</div>
+                        <div class="stat-value" id="totalWithdrawals" style="color: var(--withdrawal-color)">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Skipped</div>
+                        <div class="stat-value" id="totalSkipped" style="color: var(--text-muted)">0</div>
+                    </div>
+                </div>
+            </section>
         </div>
 
-        <hr>
-        <div id="blockchain-wallets">
-            <h2>Blockchain Wallets</h2>
+        <!-- ── Transactions ──────────────────────────────────────── -->
+        <div class="card" id="transactions">
+            <section>
+                <h2>Transactions</h2>
 
-            <div class="info" style="margin-bottom: 15px;">
-                These are your unique blockchain addresses used across all deposits and withdrawals. To query the current balance of the wallets directly from the blockchain, click on the "Query balances" button.
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <button onclick="exportWalletsCSV()" class="button" style="margin-right: 10px;">Export as CSV</button>
-                <button onclick="queryBalances()" class="button">Query balances</button>
-            </div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Symbol</th>
-                            <th>Type</th>
-                            <th>Address</th>
-                            <th class="number">Balance</th>
-                        </tr>
-                    </thead>
-                    <tbody id="blockchainWalletsTableBody"></tbody>
-                </table>
-            </div>
+                <div class="info" style="margin-bottom: 18px;">
+                    All blockchain deposits and withdrawals from your Bitpanda account. EUR value is the value at the time of the transaction.
+                </div>
+
+                <div class="filter-bar">
+                    <select id="typeFilter">
+                        <option value="">All Types</option>
+                        <option value="deposit">Deposit</option>
+                        <option value="withdrawal">Withdrawal</option>
+                    </select>
+                    <select id="coinFilter">
+                        <option value="">All Coins</option>
+                    </select>
+                    <span class="spacer"></span>
+                    <button onclick="exportToCsv()" class="btn-action">⬇ Export CSV</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Type</th>
+                                <th class="number">Amount</th>
+                                <th>Coin</th>
+                                <th class="number">EUR Value</th>
+                                <th>Recipient</th>
+                                <th>Transaction ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
         </div>
 
-        <hr>
-        <div id="wallets">
-            <h2>Bitpanda Wallets</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Symbol</th>
-                            <th class="number">Balance</th>
-                        </tr>
-                    </thead>
-                    <tbody id="walletsTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    </div>
+        <!-- ── Blockchain Wallets ─────────────────────────────────── -->
+        <div class="card" id="blockchain-wallets">
+            <section>
+                <h2>Blockchain Wallets</h2>
 
-    <footer style="text-align: center; padding: 20px; margin-top: 20px; background-color: #f8f9fa; border-top: 1px solid #dee2e6;">
-        <div style="max-width: 600px; margin: 0 auto;">
-            <p style="margin-bottom: 15px; color: #495057; font-size: 0.95em;">
-                Built with 🤖 <a href="https://www.anthropic.com/claude" target="_blank" style="color: #0d6efd; text-decoration: none; font-weight: 500;">Claude</a>
-            </p>
-            <a href="https://github.com/christiantrummer/bitpanda-transaction-explorer" target="_blank" 
-               style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; 
-                      background-color: #24292e; color: white; text-decoration: none; 
-                      border-radius: 6px; font-size: 0.9em; transition: background-color 0.2s;">
-                <svg height="20" width="20" viewBox="0 0 16 16" style="fill: currentColor;">
-                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
-                </svg>
-                View Source Code
-            </a>
+                <div class="info" style="margin-bottom: 18px;">
+                    Unique blockchain addresses used across all your deposits and withdrawals. Click "Query Balances" to fetch live balances from the blockchain.
+                </div>
+
+                <div class="filter-bar" style="margin-bottom: 16px;">
+                    <button onclick="exportWalletsCSV()" class="btn-action">⬇ Export CSV</button>
+                    <button onclick="queryBalances()" class="btn-action">⚡ Query Balances</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Address</th>
+                                <th class="number">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="blockchainWalletsTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
         </div>
+
+        <!-- ── Bitpanda Wallets ───────────────────────────────────── -->
+        <div class="card" id="wallets">
+            <section>
+                <h2>Bitpanda Wallets</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Symbol</th>
+                                <th class="number">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="walletsTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- ── Footer ────────────────────────────────────────────────── -->
+    <footer>
+        <span>Built with 🤖 <a href="https://www.anthropic.com/claude" target="_blank">Claude</a></span>
+        <br>
+        <a href="https://github.com/christiantrummer/bitpanda-transaction-explorer" target="_blank" class="github-btn">
+            <svg height="18" width="18" viewBox="0 0 16 16" style="fill: currentColor; flex-shrink:0">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+            </svg>
+            View Source on GitHub
+        </a>
     </footer>
 
     <script>
@@ -575,10 +821,10 @@
             totalWithdrawals: 0,
             totalSkipped: 0
         };
-        let isFetching = false;  // Add this at the top with your other variables
+        let isFetching = false;
         let transactions = [];
         let uniqueCoins = new Set();
-        let uniqueWallets = new Map(); // Map to store coin -> Map of addresses -> Set of types
+        let uniqueWallets = new Map();
 
         function updateStats() {
             Object.keys(stats).forEach(key => {
@@ -636,7 +882,6 @@
                 return;
             }
 
-            // Reset everything and setup UI for fetching
             document.getElementById('error').style.display = 'none';
             document.getElementById('walletsTableBody').innerHTML = '';
             document.getElementById('transactionsTableBody').innerHTML = '';
@@ -645,19 +890,12 @@
             document.getElementById('stopButton').style.display = 'inline-block';
             isFetching = true;
 
-            stats = {
-                totalProcessed: 0,
-                totalDeposits: 0,
-                totalWithdrawals: 0,
-                totalSkipped: 0
-            };
+            stats = { totalProcessed: 0, totalDeposits: 0, totalWithdrawals: 0, totalSkipped: 0 };
             updateStats();
 
             try {
                 await fetchWallets(apiKey);
-                if (isFetching) {
-                    await fetchTransactions(apiKey);
-                }
+                if (isFetching) await fetchTransactions(apiKey);
             } catch (error) {
                 showError(error.message);
             } finally {
@@ -667,7 +905,6 @@
             }
         }
 
-        // stop fetching
         function stopFetching() {
             isFetching = false;
             document.getElementById('stopButton').style.display = 'none';
@@ -683,29 +920,25 @@
             wallet_symbols = {};
             const tbody = document.getElementById('walletsTableBody');
 
-            // add all wallets to the symbols
-            wallets
-                .forEach(wallet => {
-                    const attrs = wallet.attributes;
-                    wallet_symbols[wallet.id] = attrs.cryptocoin_symbol;
-                });
+            wallets.forEach(wallet => {
+                const attrs = wallet.attributes;
+                wallet_symbols[wallet.id] = attrs.cryptocoin_symbol;
+            });
 
-            // show only wallets with a balance, sorted by symbol
             wallets
                 .filter(wallet => parseFloat(wallet.attributes.balance) > 0)
                 .sort((a, b) => a.attributes.cryptocoin_symbol.localeCompare(b.attributes.cryptocoin_symbol))
                 .forEach(wallet => {
                     const attrs = wallet.attributes;
                     const row = tbody.insertRow();
-                    
-                    // Create ID cell with link
+
                     const idCell = row.insertCell(0);
                     const idLink = document.createElement('a');
                     idLink.href = `https://web.bitpanda.com/wallet/${wallet.id}`;
-                    idLink.target = '_blank';  // Open in new tab
+                    idLink.target = '_blank';
                     idLink.textContent = wallet.id;
                     idCell.appendChild(idLink);
-                    
+
                     row.insertCell(1).textContent = attrs.cryptocoin_symbol;
                     const balanceCell = row.insertCell(2);
                     balanceCell.textContent = attrs.balance;
@@ -778,10 +1011,7 @@
                         addressLink: tx.recipient ? `https://www.mintscan.io/cosmos/account/${tx.recipient}` : null
                     };
                 default:
-                    return {
-                        txLink: null,
-                        addressLink: null
-                    };
+                    return { txLink: null, addressLink: null };
             }
         }
 
@@ -807,8 +1037,8 @@
                     if (!isFetching) break;
 
                     const attrs = tx.attributes;
-
                     let skipReason = null;
+
                     if (!['deposit', 'withdrawal'].includes(attrs.type)) {
                         skipReason = `Transaction type "${attrs.type}" is not deposit/withdrawal`;
                     } else if (!attrs.tx_id) {
@@ -817,10 +1047,7 @@
                         skipReason = `Amount is zero or negative: ${attrs.amount}`;
                     }
 
-                    if (skipReason) {
-                        stats.totalSkipped++;
-                        continue;
-                    }
+                    if (skipReason) { stats.totalSkipped++; continue; }
 
                     if (attrs.type === 'deposit') stats.totalDeposits++;
                     if (attrs.type === 'withdrawal') stats.totalWithdrawals++;
@@ -828,15 +1055,10 @@
                     const coin = wallet_symbols[attrs.wallet_id];
                     uniqueCoins.add(coin);
 
-                    // Add this new code to collect unique addresses
                     if (attrs.recipient) {
-                        if (!uniqueWallets.has(coin)) {
-                            uniqueWallets.set(coin, new Map());
-                        }
+                        if (!uniqueWallets.has(coin)) uniqueWallets.set(coin, new Map());
                         const addressMap = uniqueWallets.get(coin);
-                        if (!addressMap.has(attrs.recipient)) {
-                            addressMap.set(attrs.recipient, new Set());
-                        }
+                        if (!addressMap.has(attrs.recipient)) addressMap.set(attrs.recipient, new Set());
                         addressMap.get(attrs.recipient).add(attrs.type);
                         updateBlockchainWallets();
                     }
@@ -849,7 +1071,7 @@
                         amount_eur: attrs.amount_eur ? `€${attrs.amount_eur}` : 'N/A',
                         recipient: attrs.recipient,
                         tx_id: attrs.tx_id,
-                        attrs: attrs // Store original attributes for explorer links
+                        attrs: attrs
                     });
                 }
 
@@ -880,10 +1102,27 @@
         }
 
         function shortenAddress(address, prefixLength = 10, suffixLength = 10) {
-            if (!address || address.length <= prefixLength + suffixLength) {
-                return address;
-            }
+            if (!address || address.length <= prefixLength + suffixLength) return address;
             return `${address.slice(0, prefixLength)}...${address.slice(-suffixLength)}`;
+        }
+
+        function makeBadge(type) {
+            const span = document.createElement('span');
+            span.className = 'badge';
+            const t = type.toLowerCase();
+            if (t === 'deposit') {
+                span.classList.add('badge-deposit');
+                span.textContent = 'Deposit';
+            } else if (t === 'withdrawal') {
+                span.classList.add('badge-withdrawal');
+                span.textContent = 'Withdrawal';
+            } else if (t === 'deposit/withdrawal') {
+                span.classList.add('badge-both');
+                span.textContent = 'Deposit/Withdrawal';
+            } else {
+                span.textContent = type;
+            }
+            return span;
         }
 
         function displayTransactions() {
@@ -891,7 +1130,7 @@
             const typeFilter = document.getElementById('typeFilter').value;
             const coinFilter = document.getElementById('coinFilter').value;
 
-            tbody.innerHTML = ''; // Clear existing rows
+            tbody.innerHTML = '';
 
             const filteredTransactions = transactions.filter(tx => {
                 if (typeFilter && tx.type !== typeFilter) return false;
@@ -901,10 +1140,12 @@
 
             filteredTransactions.forEach(tx => {
                 const row = tbody.insertRow(0);
-                const { txLink, addressLink } = getExplorerLinks(tx.attrs, tx.coin);  // Get explorer links
+                const { txLink, addressLink } = getExplorerLinks(tx.attrs, tx.coin);
 
                 row.insertCell(0).textContent = tx.time;
-                row.insertCell(1).textContent = tx.type;
+
+                const typeCell = row.insertCell(1);
+                typeCell.appendChild(makeBadge(tx.type));
 
                 const amountCell = row.insertCell(2);
                 amountCell.textContent = tx.amount;
@@ -916,14 +1157,10 @@
                 eurCell.textContent = tx.amount_eur;
                 eurCell.className = 'number';
 
-                // Recipient cell with explorer link
                 const recipientCell = row.insertCell(5);
                 const shortRecipient = shortenAddress(tx.recipient);
-
                 const recipientContainer = document.createElement('div');
-                recipientContainer.style.display = 'flex';
-                recipientContainer.style.alignItems = 'center';
-                recipientContainer.style.gap = '8px';
+                recipientContainer.style.cssText = 'display:flex;align-items:center;gap:8px';
 
                 if (tx.recipient) {
                     const copyButton = document.createElement('button');
@@ -933,19 +1170,14 @@
                     copyButton.onclick = async () => {
                         try {
                             await navigator.clipboard.writeText(tx.recipient);
-                            const originalText = copyButton.innerHTML;
                             copyButton.innerHTML = '✓';
-                            setTimeout(() => {
-                                copyButton.innerHTML = originalText;
-                            }, 1000);
-                        } catch (err) {
-                            console.error('Failed to copy:', err);
-                        }
+                            setTimeout(() => { copyButton.innerHTML = '📋'; }, 1000);
+                        } catch (err) { console.error('Failed to copy:', err); }
                     };
                     recipientContainer.appendChild(copyButton);
                 }
 
-                if (tx.recipient && addressLink) {  // Use addressLink from getExplorerLinks
+                if (tx.recipient && addressLink) {
                     const link = document.createElement('a');
                     link.href = addressLink;
                     link.target = '_blank';
@@ -956,17 +1188,12 @@
                     span.textContent = shortRecipient || 'N/A';
                     recipientContainer.appendChild(span);
                 }
-
                 recipientCell.appendChild(recipientContainer);
 
-                // Transaction ID cell with explorer link
                 const txCell = row.insertCell(6);
                 const shortTxId = shortenAddress(tx.tx_id);
-
                 const container = document.createElement('div');
-                container.style.display = 'flex';
-                container.style.alignItems = 'center';
-                container.style.gap = '8px';
+                container.style.cssText = 'display:flex;align-items:center;gap:8px';
 
                 const copyButton = document.createElement('button');
                 copyButton.innerHTML = '📋';
@@ -975,18 +1202,13 @@
                 copyButton.onclick = async () => {
                     try {
                         await navigator.clipboard.writeText(tx.tx_id);
-                        const originalText = copyButton.innerHTML;
                         copyButton.innerHTML = '✓';
-                        setTimeout(() => {
-                            copyButton.innerHTML = originalText;
-                        }, 1000);
-                    } catch (err) {
-                        console.error('Failed to copy:', err);
-                    }
+                        setTimeout(() => { copyButton.innerHTML = '📋'; }, 1000);
+                    } catch (err) { console.error('Failed to copy:', err); }
                 };
                 container.appendChild(copyButton);
 
-                if (txLink) {  // Use txLink from getExplorerLinks
+                if (txLink) {
                     const link = document.createElement('a');
                     link.href = txLink;
                     link.target = '_blank';
@@ -997,7 +1219,6 @@
                     span.textContent = shortTxId;
                     container.appendChild(span);
                 }
-
                 txCell.appendChild(container);
             });
         }
@@ -1014,7 +1235,6 @@
             log(`Error: ${message}`, 'error');
         }
 
-        // Add event listeners for filters
         document.getElementById('typeFilter').addEventListener('change', displayTransactions);
         document.getElementById('coinFilter').addEventListener('change', displayTransactions);
 
@@ -1022,9 +1242,8 @@
             const debugLog = document.getElementById('debugLog');
             const debugButton = document.getElementById('debugButton');
             const isVisible = debugLog.style.display === 'block';
-
             debugLog.style.display = isVisible ? 'none' : 'block';
-            debugButton.textContent = isVisible ? 'Show Debug Log' : 'Hide Debug Log';
+            debugButton.textContent = isVisible ? 'Debug Log' : 'Hide Debug';
         }
 
         function exportToCsv() {
@@ -1033,58 +1252,29 @@
                 return;
             }
 
-            const columns = [
-                'time',
-                'type',
-                'in_or_out',
-                'coin',
-                'amount',
-                'amount_eur',
-                'fee',
-                'tx_id',
-                'recipient',
-                'public_status',
-                'coin_network_id',
-                'wallet_id',
-            ];
-
-            // Create CSV header
+            const columns = ['time','type','in_or_out','coin','amount','amount_eur','fee','tx_id','recipient','public_status','coin_network_id','wallet_id'];
             const headers = columns.join(',');
 
-            // Create CSV rows
             const rows = transactions.map(tx => {
                 const values = columns.map(col => {
                     let value = '';
                     switch (col) {
                         case 'time':
-                            // Convert to UTC ISO string and remove the 'Z' and milliseconds
-                            value = new Date(tx.attrs.time.date_iso8601)
-                                .toISOString()
-                                .replace('.000Z', '');
+                            value = new Date(tx.attrs.time.date_iso8601).toISOString().replace('.000Z', '');
                             break;
-                        case 'coin':
-                            value = tx.coin;
-                            break;
-                        case 'type':
-                            value = tx.type;
-                            break;
-                        default:
-                            value = tx.attrs[col] || '';
+                        case 'coin': value = tx.coin; break;
+                        case 'type': value = tx.type; break;
+                        default: value = tx.attrs[col] || '';
                     }
-                    // Escape quotes and wrap in quotes
                     return `"${String(value).replace(/"/g, '""')}"`;
                 });
                 return values.join(',');
             });
 
-            // Combine header and rows
             const csv = [headers, ...rows].join('\n');
-
-            // Create and trigger download
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
+            link.setAttribute('href', URL.createObjectURL(blob));
             link.setAttribute('download', 'bitpanda_transactions.csv');
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
@@ -1093,12 +1283,10 @@
         }
 
         function filterTransactions(type) {
-            const typeFilter = document.getElementById('typeFilter');
-            typeFilter.value = type;
+            document.getElementById('typeFilter').value = type;
             displayTransactions();
         }
 
-        // Add this function to update the blockchain wallets table
         function updateBlockchainWallets() {
             const tbody = document.getElementById('blockchainWalletsTableBody');
             tbody.innerHTML = '';
@@ -1111,26 +1299,22 @@
                         .forEach(([address, types]) => {
                             const row = tbody.insertRow();
                             row.setAttribute('data-address', address);
-                            
-                            // Symbol cell
+
                             row.insertCell(0).textContent = coin;
-                            
+
                             // Type cell
                             const typeCell = row.insertCell(1);
                             const typeArray = [...types];
-                            typeCell.textContent = typeArray.length === 2 ? 
-                                'Deposit/Withdrawal' : 
-                                typeArray[0].charAt(0).toUpperCase() + typeArray[0].slice(1);
-                            
-                            // Address cell
+                            const typeLabel = typeArray.length === 2
+                                ? 'Deposit/Withdrawal'
+                                : typeArray[0].charAt(0).toUpperCase() + typeArray[0].slice(1);
+                            typeCell.appendChild(makeBadge(typeLabel));
+
                             const addressCell = row.insertCell(2);
                             const { addressLink } = getExplorerLinks({ recipient: address }, coin);
                             const shortAddress = shortenAddress(address);
-                            
                             const container = document.createElement('div');
-                            container.style.display = 'flex';
-                            container.style.alignItems = 'center';
-                            container.style.gap = '8px';
+                            container.style.cssText = 'display:flex;align-items:center;gap:8px';
 
                             const copyButton = document.createElement('button');
                             copyButton.innerHTML = '📋';
@@ -1139,12 +1323,9 @@
                             copyButton.onclick = async () => {
                                 try {
                                     await navigator.clipboard.writeText(address);
-                                    const originalText = copyButton.innerHTML;
                                     copyButton.innerHTML = '✓';
-                                    setTimeout(() => copyButton.innerHTML = originalText, 1000);
-                                } catch (err) {
-                                    console.error('Failed to copy:', err);
-                                }
+                                    setTimeout(() => { copyButton.innerHTML = '📋'; }, 1000);
+                                } catch (err) { console.error('Failed to copy:', err); }
                             };
                             container.appendChild(copyButton);
 
@@ -1159,13 +1340,13 @@
                                 span.textContent = shortAddress;
                                 container.appendChild(span);
                             }
-
                             addressCell.appendChild(container);
 
-                            // Balance cell
                             const balanceCell = row.insertCell(3);
                             balanceCell.className = 'number';
-                            balanceCell.textContent = 'Click on "Query balances"';
+                            balanceCell.style.color = 'var(--text-muted)';
+                            balanceCell.style.fontStyle = 'italic';
+                            balanceCell.textContent = 'Click "Query Balances"';
                         });
                 });
         }
@@ -1176,35 +1357,25 @@
 
             for (const row of rows) {
                 const coin = row.cells[0].textContent;
-                // Use the full address from data attribute instead of the displayed short version
                 const address = row.getAttribute('data-address');
                 let balance = null;
-
-                // Create or get balance cell
                 let balanceCell = row.cells[3];
-                balanceCell.textContent = 'Querying...';
+                balanceCell.textContent = 'Querying…';
+                balanceCell.style.color = 'var(--text-muted)';
+                balanceCell.style.fontStyle = 'normal';
 
                 try {
                     switch (coin) {
                         case 'BTC':
-                            // Using Blockchain.com API
                             const btcResponse = await fetch(`https://blockchain.info/balance?active=${address}`);
                             const btcData = await btcResponse.json();
                             balance = btcData[address]?.final_balance / 100000000;
-                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            await new Promise(r => setTimeout(r, 1000));
                             break;
 
-                        case 'ETH':
-                        case 'BEST':
-                        case 'PAN':
-                        case 'OMG':
-                        case 'USDT':
-                        case 'USDC':
-                            // Using Ethplorer API for ETH and ERC20 tokens
+                        case 'ETH': case 'BEST': case 'PAN': case 'OMG': case 'USDT': case 'USDC':
                             const ethplorerResponse = await fetch(`https://api.ethplorer.io/getAddressInfo/${address}?apiKey=freekey`);
                             const ethplorerData = await ethplorerResponse.json();
-                            
-                            // Known token addresses
                             const TOKEN_ADDRESSES = {
                                 'BEST': '0x1b073382e63411e3bcffe90ac1b9a43fefa1ec6f',
                                 'PAN': '0x536381a8628dbcc8c70ac9a30a7258442eab4c92',
@@ -1213,61 +1384,50 @@
                                 'USDC': '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
                                 'CHZ': '0x3506424f91fd33084466f402d5d97f05f8e3b4af'
                             };
-
                             if (coin === 'ETH') {
                                 balance = ethplorerData.ETH?.balance || 0;
                             } else {
                                 const targetAddress = TOKEN_ADDRESSES[coin];
-                                // Find the specific token balance by contract address
-                                const tokenBalance = ethplorerData.tokens?.find(t => 
-                                    t.tokenInfo.address.toLowerCase() === targetAddress.toLowerCase()
-                                );
+                                const tokenBalance = ethplorerData.tokens?.find(t =>
+                                    t.tokenInfo.address.toLowerCase() === targetAddress.toLowerCase());
                                 if (tokenBalance) {
                                     const decimals = parseInt(tokenBalance.tokenInfo.decimals);
                                     balance = parseFloat(tokenBalance.balance) / Math.pow(10, decimals);
                                 }
                             }
-                            // Respect rate limits (2 requests per second for freekey max)
-                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            await new Promise(r => setTimeout(r, 1000));
                             break;
-                        
+
                         case 'XRP':
-                            // Using XRPL.org API
                             const xrpResponse = await fetch('https://xrplcluster.com/', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    "method": "account_info",
-                                    "params": [{
-                                        "account": address,
-                                        "strict": true,
-                                        "ledger_index": "current"
-                                    }]
-                                })
+                                body: JSON.stringify({ method: 'account_info', params: [{ account: address, strict: true, ledger_index: 'current' }] })
                             });
                             const xrpData = await xrpResponse.json();
                             if (xrpData.result?.account_data?.Balance) {
                                 balance = parseFloat(xrpData.result.account_data.Balance) / 1000000;
                             }
-                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            await new Promise(r => setTimeout(r, 1000));
                             break;
 
                         default:
                             balance = 'Not supported';
                     }
 
-                    balanceCell.textContent = typeof balance === 'number' ? 
-                        balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 }) : 
-                        balance || 'Not available';
+                    balanceCell.textContent = typeof balance === 'number'
+                        ? balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })
+                        : (balance || 'Not available');
+                    balanceCell.style.color = '';
 
                 } catch (error) {
                     console.error(`Error fetching balance for ${coin} address ${address}:`, error);
                     balanceCell.textContent = 'API Error';
+                    balanceCell.style.color = 'var(--danger)';
                 }
             }
         }
 
-        // API Key Management Functions
         function saveApiKey() {
             const apiKey = document.getElementById('apiKey').value;
             if (apiKey) {
@@ -1294,21 +1454,17 @@
 
         function toggleSaveApiKey() {
             const apiKey = document.getElementById('apiKey').value;
-            if (!apiKey) {
-                showError('Please enter an API key first');
-                return;
-            }
+            if (!apiKey) { showError('Please enter an API key first'); return; }
             saveApiKey();
         }
 
         function updateApiKeyButtons(saved) {
             const saveButton = document.getElementById('saveKeyButton');
             const clearButton = document.getElementById('clearKeyButton');
-            
             if (saved) {
                 saveButton.classList.add('active');
-                saveButton.innerHTML = '✓ API key Saved';
-                clearButton.style.display = 'inline-block';
+                saveButton.innerHTML = '✓ Key Saved';
+                clearButton.style.display = 'inline-flex';
             } else {
                 saveButton.classList.remove('active');
                 saveButton.innerHTML = '💾 Save Key';
@@ -1318,37 +1474,21 @@
 
         function showToast(message) {
             const toast = document.createElement('div');
-            toast.style.position = 'fixed';
-            toast.style.bottom = '20px';
-            toast.style.left = '50%';
-            toast.style.transform = 'translateX(-50%)';
-            toast.style.backgroundColor = '#333';
-            toast.style.color = 'white';
-            toast.style.padding = '10px 20px';
-            toast.style.borderRadius = '4px';
-            toast.style.zIndex = '1000';
+            toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1e2e;color:#e2e8f0;border:1px solid #2a2f45;padding:10px 22px;border-radius:8px;z-index:1000;font-size:0.875rem;font-family:Inter,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.5)';
             toast.textContent = message;
-            
             document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
+            setTimeout(() => toast.remove(), 3000);
         }
 
-        // Add this to your existing initialization code
         document.addEventListener('DOMContentLoaded', () => {
             loadSavedApiKey();
-            
-            // Add input event listener to update save button state
             document.getElementById('apiKey').addEventListener('input', () => {
                 const savedKey = localStorage.getItem('bitpandaApiKey');
                 const currentKey = document.getElementById('apiKey').value;
-                updateApiKeyButtons(savedKey === currentKey);
+                updateApiKeyButtons(savedKey === currentKey && !!savedKey);
             });
         });
 
-        // Add this new function for CSV export
         function exportWalletsCSV() {
             if (!uniqueWallets.size) {
                 showError('No blockchain wallets to export. Please fetch data first.');
@@ -1356,29 +1496,20 @@
             }
 
             const columns = ['symbol', 'type', 'address'];
-            const headers = columns.join(',');
-
             const rows = [];
             uniqueWallets.forEach((addressMap, coin) => {
                 addressMap.forEach((types, address) => {
-                    const typeStr = [...types].length === 2 ? 
-                        'Deposit/Withdrawal' : 
-                        [...types][0].charAt(0).toUpperCase() + [...types][0].slice(1);
-                    
-                    rows.push([
-                        `"${coin}"`,
-                        `"${typeStr}"`,
-                        `"${address}"`
-                    ].join(','));
+                    const typeStr = [...types].length === 2
+                        ? 'Deposit/Withdrawal'
+                        : [...types][0].charAt(0).toUpperCase() + [...types][0].slice(1);
+                    rows.push([`"${coin}"`, `"${typeStr}"`, `"${address}"`].join(','));
                 });
             });
 
-            const csv = [headers, ...rows].join('\n');
-            
+            const csv = [columns.join(','), ...rows].join('\n');
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
+            link.setAttribute('href', URL.createObjectURL(blob));
             link.setAttribute('download', 'bitpanda_blockchain_wallets.csv');
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
