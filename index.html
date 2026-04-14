@@ -771,6 +771,7 @@
                                 <th>Type</th>
                                 <th>Address</th>
                                 <th class="number">Balance</th>
+                                <th class="number">EUR Value</th>
                             </tr>
                         </thead>
                         <tbody id="blockchainWalletsTableBody"></tbody>
@@ -790,6 +791,7 @@
                                 <th>ID</th>
                                 <th>Symbol</th>
                                 <th class="number">Balance</th>
+                                <th class="number">EUR Value</th>
                             </tr>
                         </thead>
                         <tbody id="walletsTableBody"></tbody>
@@ -825,6 +827,7 @@
         let transactions = [];
         let uniqueCoins = new Set();
         let uniqueWallets = new Map();
+        let tickerCache = null;
 
         function updateStats() {
             Object.keys(stats).forEach(key => {
@@ -912,10 +915,25 @@
             updateStatus('Fetching stopped by user');
         }
 
+        async function fetchTicker() {
+            if (tickerCache) return tickerCache;
+            try {
+                const response = await fetch('https://api.bitpanda.com/v1/ticker');
+                tickerCache = await response.json();
+                return tickerCache;
+            } catch (error) {
+                log(`Failed to fetch ticker prices: ${error.message}`, 'error');
+                return {};
+            }
+        }
+
         async function fetchWallets(apiKey) {
             updateStatus('Fetching wallets...');
-            const data = await apiFetch('/wallets', apiKey);
-            const wallets = data.data;
+            const [walletsData, ticker] = await Promise.all([
+                apiFetch('/wallets', apiKey),
+                fetchTicker()
+            ]);
+            const wallets = walletsData.data;
 
             wallet_symbols = {};
             const tbody = document.getElementById('walletsTableBody');
@@ -940,9 +958,21 @@
                     idCell.appendChild(idLink);
 
                     row.insertCell(1).textContent = attrs.cryptocoin_symbol;
+
                     const balanceCell = row.insertCell(2);
                     balanceCell.textContent = attrs.balance;
                     balanceCell.className = 'number';
+
+                    const eurCell = row.insertCell(3);
+                    eurCell.className = 'number';
+                    const price = ticker[attrs.cryptocoin_symbol]?.EUR;
+                    if (price) {
+                        const eurValue = parseFloat(attrs.balance) * parseFloat(price);
+                        eurCell.textContent = '€' + eurValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    } else {
+                        eurCell.textContent = '—';
+                        eurCell.style.color = 'var(--text-muted)';
+                    }
                 });
 
             log(`Found ${wallets.length} wallets`);
@@ -1347,6 +1377,12 @@
                             balanceCell.style.color = 'var(--text-muted)';
                             balanceCell.style.fontStyle = 'italic';
                             balanceCell.textContent = 'Click "Query Balances"';
+
+                            const eurCell = row.insertCell(4);
+                            eurCell.className = 'number';
+                            eurCell.style.color = 'var(--text-muted)';
+                            eurCell.style.fontStyle = 'italic';
+                            eurCell.textContent = '—';
                         });
                 });
         }
@@ -1354,15 +1390,20 @@
         async function queryBalances() {
             const tbody = document.getElementById('blockchainWalletsTableBody');
             const rows = tbody.getElementsByTagName('tr');
+            const ticker = await fetchTicker();
 
             for (const row of rows) {
                 const coin = row.cells[0].textContent;
                 const address = row.getAttribute('data-address');
                 let balance = null;
                 let balanceCell = row.cells[3];
+                let eurCell = row.cells[4];
                 balanceCell.textContent = 'Querying…';
                 balanceCell.style.color = 'var(--text-muted)';
                 balanceCell.style.fontStyle = 'normal';
+                eurCell.textContent = '—';
+                eurCell.style.color = 'var(--text-muted)';
+                eurCell.style.fontStyle = 'normal';
 
                 try {
                     switch (coin) {
@@ -1419,6 +1460,15 @@
                         ? balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })
                         : (balance || 'Not available');
                     balanceCell.style.color = '';
+
+                    if (typeof balance === 'number') {
+                        const price = ticker[coin]?.EUR;
+                        if (price) {
+                            const eurValue = balance * parseFloat(price);
+                            eurCell.textContent = '€' + eurValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            eurCell.style.color = '';
+                        }
+                    }
 
                 } catch (error) {
                     console.error(`Error fetching balance for ${coin} address ${address}:`, error);
