@@ -416,6 +416,186 @@
 
         .stat-card.clickable.active::before { opacity: 1; }
 
+        /* ── By Coin dashboard ──────────────────────────────────── */
+        .coin-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 12px;
+        }
+
+        .coin-card {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .coin-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .coin-card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(232, 97, 42, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .coin-card:hover::before { opacity: 1; }
+
+        .coin-card.active {
+            background: var(--bg-card-hover);
+            border-color: rgba(232, 97, 42, 0.5);
+            box-shadow: 0 0 0 1px rgba(232, 97, 42, 0.3), 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .coin-card.active::before { opacity: 1; }
+
+        .coin-card-header {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        .coin-card-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .coin-stat {
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            padding: 10px;
+        }
+
+        .coin-stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .coin-stat-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.3;
+        }
+
+        .coin-stat-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ── By Time dashboard ──────────────────────────────────── */
+        .time-dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .time-year-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+        }
+
+        .time-year-row:hover { background: var(--bg-card-hover); border-color: rgba(232, 97, 42, 0.3); }
+
+        .time-year-row.active {
+            border-color: rgba(232, 97, 42, 0.5);
+            box-shadow: 0 0 0 1px rgba(232, 97, 42, 0.2);
+        }
+
+        .time-chevron {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            transition: transform 0.2s;
+            width: 12px;
+        }
+
+        .time-year-row.expanded .time-chevron { transform: rotate(90deg); }
+
+        .time-label {
+            font-weight: 600;
+            color: var(--text);
+            min-width: 60px;
+        }
+
+        .time-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .time-stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .time-stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .time-stat-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .time-months {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            margin-left: 24px;
+            margin-top: 2px;
+        }
+
+        .time-months.open { display: flex; }
+
+        .time-month-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+        }
+
+        .time-month-row:hover { background: var(--bg-2); border-color: rgba(232, 97, 42, 0.2); }
+
+        .time-month-row.active {
+            border-color: rgba(232, 97, 42, 0.5);
+            box-shadow: 0 0 0 1px rgba(232, 97, 42, 0.2);
+        }
+
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
@@ -716,6 +896,22 @@
             </section>
         </div>
 
+        <!-- ── By Coin ───────────────────────────────────────────── -->
+        <div class="card" id="byCoinCard" style="display:none">
+            <section>
+                <h2>By Coin</h2>
+                <div id="coinDashboard" class="coin-dashboard"></div>
+            </section>
+        </div>
+
+        <!-- ── By Time ───────────────────────────────────────────── -->
+        <div class="card" id="byTimeCard" style="display:none">
+            <section>
+                <h2>By Time</h2>
+                <div id="timeDashboard" class="time-dashboard"></div>
+            </section>
+        </div>
+
         <!-- ── Transactions ──────────────────────────────────────── -->
         <div class="card" id="transactions">
             <section>
@@ -836,11 +1032,42 @@
         let uniqueCoins = new Set();
         let uniqueWallets = new Map();
         let tickerCache = null;
+        let activeCoinFilter = null;
+        let activeTimeFilter = null; // null or {year, month} (month optional)
 
         function updateStats() {
             Object.keys(stats).forEach(key => {
                 document.getElementById(key).textContent = stats[key];
             });
+        }
+
+        function setCoinFilter(coin) {
+            // Toggle off if same coin clicked again
+            const newCoin = (activeCoinFilter === coin) ? null : coin;
+            activeCoinFilter = newCoin;
+            document.getElementById('coinFilter').value = newCoin || '';
+            displayTransactions();
+            updateBlockchainWallets();
+            updateCoinDashboard();
+        }
+
+        function setTimeFilter(year, month) {
+            // Toggle off if same period clicked again
+            const sameYear = activeTimeFilter && activeTimeFilter.year === year;
+            const sameMonth = sameYear && activeTimeFilter.month === month;
+            if (month !== undefined ? sameMonth : (sameYear && activeTimeFilter.month === undefined)) {
+                activeTimeFilter = null;
+            } else {
+                activeTimeFilter = month !== undefined ? { year, month } : { year };
+            }
+            displayTransactions();
+            updateTimeDashboard();
+        }
+
+        function formatEurTotal(sum, naCount) {
+            if (naCount > 0 && sum === 0) return 'N/A';
+            const formatted = '€' + sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return naCount > 0 ? `${formatted} (${naCount} N/A)` : formatted;
         }
 
         function log(message, type = '') {
@@ -912,6 +1139,10 @@
             isFetching = true;
 
             stats = { totalProcessed: 0, totalDeposits: 0, totalWithdrawals: 0, totalSkipped: 0 };
+            activeCoinFilter = null;
+            activeTimeFilter = null;
+            document.getElementById('byCoinCard').style.display = 'none';
+            document.getElementById('byTimeCard').style.display = 'none';
             updateStats();
 
             try {
@@ -1126,6 +1357,8 @@
                 updateCoinFilter();
                 displayTransactions();
                 updateStats();
+                updateCoinDashboard();
+                updateTimeDashboard();
 
                 if (!data.meta.next_cursor || !isFetching) {
                     log('Finished fetching all transactions');
@@ -1183,6 +1416,12 @@
             const filteredTransactions = transactions.filter(tx => {
                 if (typeFilter && tx.type !== typeFilter) return false;
                 if (coinFilter && tx.coin !== coinFilter) return false;
+                if (activeCoinFilter && tx.coin !== activeCoinFilter) return false;
+                if (activeTimeFilter) {
+                    const d = new Date(tx.attrs.time.date_iso8601);
+                    if (d.getFullYear() !== activeTimeFilter.year) return false;
+                    if (activeTimeFilter.month !== undefined && d.getMonth() !== activeTimeFilter.month) return false;
+                }
                 return true;
             });
 
@@ -1284,7 +1523,13 @@
         }
 
         document.getElementById('typeFilter').addEventListener('change', displayTransactions);
-        document.getElementById('coinFilter').addEventListener('change', displayTransactions);
+        document.getElementById('coinFilter').addEventListener('change', function() {
+            const val = this.value || null;
+            activeCoinFilter = val;
+            displayTransactions();
+            updateBlockchainWallets();
+            updateCoinDashboard();
+        });
 
         function toggleDebugLog() {
             const debugLog = document.getElementById('debugLog');
@@ -1349,6 +1594,7 @@
             [...uniqueWallets.entries()]
                 .sort(([coinA], [coinB]) => coinA.localeCompare(coinB))
                 .forEach(([coin, addressMap]) => {
+                    if (activeCoinFilter && coin !== activeCoinFilter) return;
                     [...addressMap.entries()]
                         .sort(([addrA], [addrB]) => addrA.localeCompare(addrB))
                         .forEach(([address, types]) => {
@@ -1593,6 +1839,192 @@
             link.click();
             document.body.removeChild(link);
         }
+        function updateCoinDashboard() {
+            const container = document.getElementById('coinDashboard');
+            const card = document.getElementById('byCoinCard');
+            if (!transactions.length) { card.style.display = 'none'; return; }
+            card.style.display = '';
+
+            // Aggregate by coin
+            const byCoins = new Map();
+            transactions.forEach(tx => {
+                if (!byCoins.has(tx.coin)) {
+                    byCoins.set(tx.coin, {
+                        depositCount: 0, depositAmount: 0, depositEurSum: 0, depositEurNa: 0,
+                        withdrawalCount: 0, withdrawalAmount: 0, withdrawalEurSum: 0, withdrawalEurNa: 0,
+                        totalEur: 0
+                    });
+                }
+                const c = byCoins.get(tx.coin);
+                const eur = tx.amount_eur && tx.amount_eur !== 'N/A'
+                    ? parseFloat(tx.amount_eur.replace('€', ''))
+                    : null;
+                if (tx.type === 'deposit') {
+                    c.depositCount++;
+                    c.depositAmount += parseFloat(tx.amount);
+                    if (eur !== null) { c.depositEurSum += eur; c.totalEur += eur; }
+                    else c.depositEurNa++;
+                } else {
+                    c.withdrawalCount++;
+                    c.withdrawalAmount += parseFloat(tx.amount);
+                    if (eur !== null) { c.withdrawalEurSum += eur; c.totalEur += eur; }
+                    else c.withdrawalEurNa++;
+                }
+            });
+
+            // Sort by total EUR desc, all-N/A last
+            const sorted = [...byCoins.entries()].sort(([, a], [, b]) => b.totalEur - a.totalEur);
+
+            container.innerHTML = '';
+            sorted.forEach(([coin, c]) => {
+                const isActive = activeCoinFilter === coin;
+                const div = document.createElement('div');
+                div.className = 'coin-card' + (isActive ? ' active' : '');
+                div.onclick = () => setCoinFilter(coin);
+
+                const depEur = formatEurTotal(c.depositEurSum, c.depositEurNa);
+                const withEur = formatEurTotal(c.withdrawalEurSum, c.withdrawalEurNa);
+                const depAmt = c.depositAmount.toLocaleString('de-DE', { maximumFractionDigits: 8 });
+                const withAmt = c.withdrawalAmount.toLocaleString('de-DE', { maximumFractionDigits: 8 });
+
+                div.innerHTML = `
+                    <div class="coin-card-header">${coin}</div>
+                    <div class="coin-card-body">
+                        <div class="coin-stat">
+                            <div class="coin-stat-label" style="color:var(--deposit-color)">↓ Deposits</div>
+                            <div class="coin-stat-value">${c.depositCount} txn${c.depositCount !== 1 ? 's' : ''}</div>
+                            <div class="coin-stat-sub">${depAmt} ${coin}</div>
+                            <div class="coin-stat-sub">${depEur}</div>
+                        </div>
+                        <div class="coin-stat">
+                            <div class="coin-stat-label" style="color:var(--withdrawal-color)">↑ Withdrawals</div>
+                            <div class="coin-stat-value">${c.withdrawalCount} txn${c.withdrawalCount !== 1 ? 's' : ''}</div>
+                            <div class="coin-stat-sub">${withAmt} ${coin}</div>
+                            <div class="coin-stat-sub">${withEur}</div>
+                        </div>
+                    </div>`;
+                container.appendChild(div);
+            });
+        }
+
+        const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+        function updateTimeDashboard() {
+            const container = document.getElementById('timeDashboard');
+            const card = document.getElementById('byTimeCard');
+            if (!transactions.length) { card.style.display = 'none'; return; }
+            card.style.display = '';
+
+            // Aggregate by year and month
+            const byYear = new Map();
+            transactions.forEach(tx => {
+                const d = new Date(tx.attrs.time.date_iso8601);
+                const year = d.getFullYear();
+                const month = d.getMonth();
+                if (!byYear.has(year)) byYear.set(year, new Map());
+                const months = byYear.get(year);
+                if (!months.has(month)) months.set(month, {
+                    depositCount: 0, depositEurSum: 0, depositEurNa: 0,
+                    withdrawalCount: 0, withdrawalEurSum: 0, withdrawalEurNa: 0
+                });
+                const m = months.get(month);
+                const eur = tx.amount_eur && tx.amount_eur !== 'N/A'
+                    ? parseFloat(tx.amount_eur.replace('€', ''))
+                    : null;
+                if (tx.type === 'deposit') {
+                    m.depositCount++;
+                    if (eur !== null) m.depositEurSum += eur; else m.depositEurNa++;
+                } else {
+                    m.withdrawalCount++;
+                    if (eur !== null) m.withdrawalEurSum += eur; else m.withdrawalEurNa++;
+                }
+            });
+
+            // Remember which years are expanded
+            const expandedYears = new Set();
+            container.querySelectorAll('.time-year-row.expanded').forEach(el => {
+                expandedYears.add(parseInt(el.dataset.year));
+            });
+
+            // Sort years descending
+            const sortedYears = [...byYear.keys()].sort((a, b) => b - a);
+
+            container.innerHTML = '';
+            sortedYears.forEach(year => {
+                const months = byYear.get(year);
+
+                // Sum year totals from months
+                let depCount = 0, depEurSum = 0, depEurNa = 0;
+                let withCount = 0, withEurSum = 0, withEurNa = 0;
+                months.forEach(m => {
+                    depCount += m.depositCount; depEurSum += m.depositEurSum; depEurNa += m.depositEurNa;
+                    withCount += m.withdrawalCount; withEurSum += m.withdrawalEurSum; withEurNa += m.withdrawalEurNa;
+                });
+
+                const isYearActive = activeTimeFilter && activeTimeFilter.year === year && activeTimeFilter.month === undefined;
+                const isExpanded = expandedYears.has(year);
+
+                const yearRow = document.createElement('div');
+                yearRow.className = 'time-year-row' + (isYearActive ? ' active' : '') + (isExpanded ? ' expanded' : '');
+                yearRow.dataset.year = year;
+
+                yearRow.innerHTML = `
+                    <span class="time-chevron">▶</span>
+                    <span class="time-label">${year}</span>
+                    <div class="time-stats">
+                        <div class="time-stat-item">
+                            <span class="time-stat-label" style="color:var(--deposit-color)">↓ Deposits</span>
+                            <span class="time-stat-value" style="color:var(--deposit-color)">${depCount} &nbsp; ${formatEurTotal(depEurSum, depEurNa)}</span>
+                        </div>
+                        <div class="time-stat-item">
+                            <span class="time-stat-label" style="color:var(--withdrawal-color)">↑ Withdrawals</span>
+                            <span class="time-stat-value" style="color:var(--withdrawal-color)">${withCount} &nbsp; ${formatEurTotal(withEurSum, withEurNa)}</span>
+                        </div>
+                    </div>`;
+
+                // Month rows container
+                const monthsDiv = document.createElement('div');
+                monthsDiv.className = 'time-months' + (isExpanded ? ' open' : '');
+
+                const sortedMonths = [...months.keys()].sort((a, b) => a - b);
+                sortedMonths.forEach(month => {
+                    const m = months.get(month);
+                    const isMonthActive = activeTimeFilter && activeTimeFilter.year === year && activeTimeFilter.month === month;
+
+                    const monthRow = document.createElement('div');
+                    monthRow.className = 'time-month-row' + (isMonthActive ? ' active' : '');
+
+                    monthRow.innerHTML = `
+                        <span class="time-label" style="font-weight:400">${MONTH_NAMES[month]}</span>
+                        <div class="time-stats">
+                            <div class="time-stat-item">
+                                <span class="time-stat-label" style="color:var(--deposit-color)">↓ Deposits</span>
+                                <span class="time-stat-value" style="color:var(--deposit-color)">${m.depositCount} &nbsp; ${formatEurTotal(m.depositEurSum, m.depositEurNa)}</span>
+                            </div>
+                            <div class="time-stat-item">
+                                <span class="time-stat-label" style="color:var(--withdrawal-color)">↑ Withdrawals</span>
+                                <span class="time-stat-value" style="color:var(--withdrawal-color)">${m.withdrawalCount} &nbsp; ${formatEurTotal(m.withdrawalEurSum, m.withdrawalEurNa)}</span>
+                            </div>
+                        </div>`;
+
+                    monthRow.addEventListener('click', e => {
+                        e.stopPropagation();
+                        setTimeFilter(year, month);
+                    });
+                    monthsDiv.appendChild(monthRow);
+                });
+
+                yearRow.addEventListener('click', () => {
+                    yearRow.classList.toggle('expanded');
+                    monthsDiv.classList.toggle('open');
+                    setTimeFilter(year, undefined);
+                });
+
+                container.appendChild(yearRow);
+                container.appendChild(monthsDiv);
+            });
+        }
+
     </script>
 </body>
 
