@@ -408,6 +408,14 @@
 
         .stat-card.clickable:hover::before { opacity: 1; }
 
+        .stat-card.clickable.active {
+            background: var(--bg-card-hover);
+            border-color: rgba(232, 97, 42, 0.5);
+            box-shadow: 0 0 0 1px rgba(232, 97, 42, 0.3), 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .stat-card.clickable.active::before { opacity: 1; }
+
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
@@ -692,11 +700,11 @@
                         <div class="stat-label">Total Processed</div>
                         <div class="stat-value" id="totalProcessed">0</div>
                     </div>
-                    <div class="stat-card clickable" onclick="filterTransactions('deposit')">
+                    <div class="stat-card clickable" id="statCard-deposit" onclick="filterTransactions('deposit')">
                         <div class="stat-label">Deposits</div>
                         <div class="stat-value" id="totalDeposits" style="color: var(--deposit-color)">0</div>
                     </div>
-                    <div class="stat-card clickable" onclick="filterTransactions('withdrawal')">
+                    <div class="stat-card clickable" id="statCard-withdrawal" onclick="filterTransactions('withdrawal')">
                         <div class="stat-label">Withdrawals</div>
                         <div class="stat-value" id="totalWithdrawals" style="color: var(--withdrawal-color)">0</div>
                     </div>
@@ -1313,13 +1321,20 @@
         }
 
         function filterTransactions(type) {
-            document.getElementById('typeFilter').value = type;
+            const current = document.getElementById('typeFilter').value;
+            const newType = (current === type) ? '' : type;
+            document.getElementById('typeFilter').value = newType;
+            document.getElementById('statCard-deposit').classList.toggle('active', newType === 'deposit');
+            document.getElementById('statCard-withdrawal').classList.toggle('active', newType === 'withdrawal');
             displayTransactions();
+            updateBlockchainWallets();
         }
 
         function updateBlockchainWallets() {
             const tbody = document.getElementById('blockchainWalletsTableBody');
             tbody.innerHTML = '';
+
+            const typeFilter = document.getElementById('typeFilter').value;
 
             [...uniqueWallets.entries()]
                 .sort(([coinA], [coinB]) => coinA.localeCompare(coinB))
@@ -1327,6 +1342,8 @@
                     [...addressMap.entries()]
                         .sort(([addrA], [addrB]) => addrA.localeCompare(addrB))
                         .forEach(([address, types]) => {
+                            if (typeFilter && !types.has(typeFilter)) return;
+
                             const row = tbody.insertRow();
                             row.setAttribute('data-address', address);
 
