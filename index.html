@@ -859,7 +859,7 @@
 
             log(`Making request to: ${url}`);
 
-            try {
+            const doFetch = async () => {
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: {
@@ -868,8 +868,18 @@
                         'Content-Type': 'application/json'
                     }
                 });
-
                 log(`Response status: ${response.status} ${response.statusText}`);
+                return response;
+            };
+
+            try {
+                let response = await doFetch();
+
+                if (response.status === 503) {
+                    log(`HTTP 503 received for ${endpoint}, retrying in 2s...`, 'error');
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    response = await doFetch();
+                }
 
                 if (!response.ok) {
                     const errorText = await response.text();
